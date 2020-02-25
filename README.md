@@ -1,2 +1,2 @@
-# omnivore
-herbivore-clone
+# Fruitarian
+A clone of the herbivore anonymous communication protocol
