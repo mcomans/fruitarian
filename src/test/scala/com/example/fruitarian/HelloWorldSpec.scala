@@ -1,4 +1,4 @@
-package nl.tudelft.fruitarian
+package com.example.fruitarian
 
 import cats.effect.IO
 import org.http4s._

@@ -1,4 +1,4 @@
-package nl.tudelft.fruitarian
+package com.example.fruitarian
 
 import cats.effect.Sync
 import cats.implicits._
