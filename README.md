@@ -20,3 +20,7 @@ You should now be able to run the project from the main file.
 ### Terminal
 To run the project in the terminal cd to the root of the project and call `sbt`.
 Once inside the `sbt` terminal you can run the command `run` to run the main project and `test` to run the tests.
+
+### Pre-Commit
+To apply some simple checks before you commit like removing trailing whitespaces, or to forbid you to commit to master you can install [pre-commit](https://pre-commit.com).
+Installation can be done using the command `python3 -m pip install pre-commit` and running `pre-commit install` in the project root folder.
