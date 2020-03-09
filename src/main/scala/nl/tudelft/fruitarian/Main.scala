@@ -27,9 +27,6 @@ object Main extends App {
   sys.scheduler.scheduleOnce(10.seconds) {
     println("System shutdown!")
     // Kill everyone
-    serverActor ! PoisonPill
-    clientActor ! PoisonPill
-    loggerActor ! PoisonPill
     sys.terminate()
   }
 }
