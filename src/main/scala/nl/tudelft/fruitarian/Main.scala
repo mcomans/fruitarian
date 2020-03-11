@@ -17,10 +17,6 @@ object Main extends App {
   val loggerActor = sys.actorOf(Props[Logger], "Logger")
   val clientActor = sys.actorOf(tcp.Client.props(new InetSocketAddress("localhost", 5000), loggerActor), "TCPClient")
 
-
-  def sendHeartbeat(): Unit = {
-    clientActor ! ClientSend(ByteString("Heartbeat"))
-  }
   sys.scheduler.scheduleWithFixedDelay(500.millis, 2.seconds, clientActor, ClientSend(ByteString("Heartbeat")))
 
 
