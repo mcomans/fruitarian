@@ -1,0 +1,21 @@
+name: Basic Pipeline
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: olafurpg/setup-scala@v5
+        with:
+          java-version: openjdk@1.11
+      - name: Compile Project
+        run: sbt compile
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: olafurpg/setup-scala@v5
+        with:
+          java-version: openjdk@1.11
+      - name: Test Project
+        run: sbt test
