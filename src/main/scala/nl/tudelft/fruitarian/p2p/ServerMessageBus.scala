@@ -1,18 +1,9 @@
 package nl.tudelft.fruitarian.p2p
 
-trait Observer[S] {
-  def receiveUpdate(event: S);
-}
+import nl.tudelft.fruitarian.patterns.Subject
 
-trait Subject[S] {
-  private var observers: List[Observer[S]] = Nil
-  def addObserver(observer: Observer[S]) = observers = observer :: observers
-  def notifyObservers(event: S) = observers.foreach(_.receiveUpdate(event))
-}
-
-object ServerMessageBus extends Subject[ByteMsg] {
-  def onIncomingMessage(message: ByteMsg): Unit = {
-    println("Incoming message: " + message.bytes.map(_.toChar).mkString)
+object ServerMessageBus extends Subject[Msg] {
+  def onIncomingMessage(message: Msg): Unit = {
     super.notifyObservers(message)
   }
 }

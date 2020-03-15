@@ -6,14 +6,15 @@ import akka.actor.{Actor, ActorSystem, Props}
 import akka.io.Tcp._
 import akka.io.{IO, Tcp}
 import akka.util.ByteString
-import nl.tudelft.fruitarian.p2p.ByteMsg
+import nl.tudelft.fruitarian.p2p.Msg
 import nl.tudelft.fruitarian.p2p.tcp.Client.ClientSend
+import nl.tudelft.fruitarian.p2p.MessageSerializer
 
 object Client {
-  final case class ClientSend(msg: ByteMsg)
-  final case class ClientReceived(msg: ByteMsg)
+  final case class ClientSend(msg: Msg)
+  final case class ClientReceived(msg: Msg)
 
-  def props(remote: InetSocketAddress, callback: (ByteMsg) => Unit) =
+  def props(remote: InetSocketAddress, callback: Msg => Unit) =
     Props(classOf[Client], remote, callback);
 }
 
@@ -22,7 +23,7 @@ object Client {
  * listener actor up to date on what happens on that TCP connection.
  * @param remote The remote address to connect to.
  */
-class Client(remote: InetSocketAddress, callback: ByteMsg => Unit) extends
+class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
   Actor {
   implicit val system: ActorSystem = context.system
 
@@ -34,31 +35,31 @@ class Client(remote: InetSocketAddress, callback: ByteMsg => Unit) extends
   def receive = {
     // Upon connection failure, let listener know and kill.
     case CommandFailed(_: Connect) =>
-      callback(ByteMsg("connection failed".getBytes()))
+      println("Failed to set up connection")
       context.stop(self)
 
     // Upon connection success.
     case c @ Connected(remote, local) =>
-//      listener ! c
       val connection = sender()
       connection ! Register(self)
       context.become {
         // Upon getting binary data, send it through the connection.
-        case ClientSend(data) =>
-          connection ! Write(ByteString(data.bytes))
+        case ClientSend(msg: Msg) =>
+          connection ! Write(ByteString(MessageSerializer.serializeMsg(msg)))
 
         // If the write failed due to OS buffer being full.
-        case CommandFailed(w: Write) => callback(ByteMsg("Write Failed".getBytes()))
+        case CommandFailed(w: Write) => println("Write Failed")
 
         // When data received, send it to the listener.
-        case Received(data) => callback(ByteMsg(data.toArray))
+        case Received(data: ByteString) => callback(MessageSerializer
+          .deserialize(data.utf8String))
 
         // On close command.
         case "close" => connection ! Close
 
         // Upon receiving the close message.
         case _: ConnectionClosed =>
-          callback(ByteMsg("connection closed".getBytes()))
+          println("Connection Closed")
           context.stop(self)
       }
   }
