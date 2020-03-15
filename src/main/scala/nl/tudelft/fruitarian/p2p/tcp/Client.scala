@@ -26,8 +26,7 @@ object Client {
 class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
   Actor {
   implicit val system: ActorSystem = context.system
-
-  // TODO: Implement message queue.
+  var queue: List[Msg] = Nil
 
   // Connect to the desired tcp remote.
   IO(Tcp) ! Connect(remote)
@@ -38,14 +37,22 @@ class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
       println("Failed to set up connection")
       context.stop(self)
 
+    // When a message is sent but the connection is not yet ready, enqueue it.
+    case ClientSend(msg: Msg) => queue = msg :: queue
+
     // Upon connection success.
     case c @ Connected(remote, local) =>
       val connection = sender()
       connection ! Register(self)
+
+      // Clear message queue when connection was established.
+      queue.foreach((msg: Msg) => connection ! sendMsg(msg))
+      queue = Nil
+
       context.become {
         // Upon getting binary data, send it through the connection.
         case ClientSend(msg: Msg) =>
-          connection ! Write(ByteString(MessageSerializer.serializeMsg(msg)))
+          connection ! sendMsg(msg)
 
         // If the write failed due to OS buffer being full.
         case CommandFailed(w: Write) => println("Write Failed")
@@ -63,4 +70,6 @@ class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
           context.stop(self)
       }
   }
+
+  def sendMsg(msg: Msg) = Write(ByteString(MessageSerializer.serializeMsg(msg)))
 }
