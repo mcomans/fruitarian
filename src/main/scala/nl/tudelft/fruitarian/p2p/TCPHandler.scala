@@ -3,7 +3,6 @@ package nl.tudelft.fruitarian.p2p
 import java.net.InetSocketAddress
 
 import akka.actor.{ActorRef, ActorSystem}
-import nl.tudelft.fruitarian.p2p.tcp.Client.ClientSend
 import nl.tudelft.fruitarian.patterns.Observer
 
 
@@ -25,7 +24,7 @@ class TCPHandler() {
   def sendMessage(msg: Msg): Unit = {
     val connection: TCPConnection = connections.find(_.address == msg.header.to)
       .getOrElse(setupConnectionTo(msg.header.to))
-    connection.actor ! ClientSend(msg)
+    connection.actor ! SendMsg(msg)
   }
 
   def addMessageObserver(observer: Observer[Msg]): Unit = {

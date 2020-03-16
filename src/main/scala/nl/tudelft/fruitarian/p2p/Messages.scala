@@ -15,11 +15,14 @@ object MsgType extends Enumeration {
 }
 
 /** The Header of a message. */
-case class MsgHeader(msgType: MsgType.Value, from: Address,
-                                to: Address)
+case class MsgHeader(msgType: MsgType.Value, var from: Address,
+                     to: Address)
 
 /** An abstract structure that defines the general structure of a message.
  * header: The header of the message, containing metadata.
  * body: The body of the message, containing the data to be sent.
  */
 case class Msg(header: MsgHeader, body: Array[Byte])
+
+/** Case class used to define an actor command to given send message. */
+final case class SendMsg(msg: Msg)

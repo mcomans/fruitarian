@@ -6,14 +6,9 @@ import akka.actor.{Actor, ActorSystem, Props}
 import akka.io.Tcp._
 import akka.io.{IO, Tcp}
 import akka.util.ByteString
-import nl.tudelft.fruitarian.p2p.Msg
-import nl.tudelft.fruitarian.p2p.tcp.Client.ClientSend
-import nl.tudelft.fruitarian.p2p.MessageSerializer
+import nl.tudelft.fruitarian.p2p.{Address, MessageSerializer, Msg, SendMsg}
 
 object Client {
-  final case class ClientSend(msg: Msg)
-  final case class ClientReceived(msg: Msg)
-
   def props(remote: InetSocketAddress, callback: Msg => Unit) =
     Props(classOf[Client], remote, callback);
 }
@@ -38,7 +33,7 @@ class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
       context.stop(self)
 
     // When a message is sent but the connection is not yet ready, enqueue it.
-    case ClientSend(msg: Msg) => queue = msg :: queue
+    case SendMsg(msg: Msg) => queue = msg :: queue
 
     // Upon connection success.
     case c @ Connected(remote, local) =>
@@ -53,7 +48,7 @@ class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
 
       context.become {
         // Upon getting binary data, send it through the connection.
-        case ClientSend(msg: Msg) =>
+        case SendMsg(msg: Msg) =>
           connection ! sendMsg(msg)
 
         // If the write failed due to OS buffer being full.
