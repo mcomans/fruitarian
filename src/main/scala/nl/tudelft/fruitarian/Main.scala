@@ -9,10 +9,11 @@ object Main extends App {
 
   object BasicLogger extends Observer[Msg] {
     def receiveUpdate(event: Msg): Unit = event match {
-      case Msg(MsgHeader(msgType, _, _), text) if msgType == MsgType.Text =>
-        println("TEXT: " + text.map(_.toChar).mkString)
-      case Msg(MsgHeader(msgType, _, _), body) if msgType == MsgType.Bytes =>
-        println("BYTES: " + body)
+      case Msg(MsgHeader(msgType, from, _), text) if msgType == MsgType.Text =>
+        val msg = text.map(_.toChar).mkString
+        println(s"[${from.socket}][TEXT]: $msg")
+      case Msg(MsgHeader(msgType, from, _), body) if msgType == MsgType.Bytes =>
+        println(s"[${from.socket}][BYTES]: $body")
     }
   }
 

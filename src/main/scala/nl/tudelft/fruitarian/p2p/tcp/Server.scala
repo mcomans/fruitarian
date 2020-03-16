@@ -30,7 +30,7 @@ class Server(host: InetSocketAddress, callback: Msg => Unit) extends
   def receive: Receive = {
     // When the bound to our IO(Tcp) listener is completed.
     case b @ Bound(localAddress) =>
-      println("Server listening on " + localAddress.getHostString)
+      println(s"[S] Listening on [$localAddress]")
 
     // When the bound to our IO(Tcp) listener failed.
     case CommandFailed(_: Bind) => context.stop(self)
@@ -41,5 +41,6 @@ class Server(host: InetSocketAddress, callback: Msg => Unit) extends
       val handler = context.actorOf(ConnectionHandler.props(callback))
       val connection = sender()
       connection ! Register(handler)
+      println(s"[S] Client connected from [$remote]")
   }
 }

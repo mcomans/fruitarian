@@ -34,7 +34,7 @@ class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
   def receive = {
     // Upon connection failure, let listener know and kill.
     case CommandFailed(_: Connect) =>
-      println("Failed to set up connection")
+      println(s"[C] Failed establishing new connection to [$remote]")
       context.stop(self)
 
     // When a message is sent but the connection is not yet ready, enqueue it.
@@ -49,13 +49,15 @@ class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
       queue.foreach((msg: Msg) => connection ! sendMsg(msg))
       queue = Nil
 
+      println(s"[C] Connection established to [$remote]")
+
       context.become {
         // Upon getting binary data, send it through the connection.
         case ClientSend(msg: Msg) =>
           connection ! sendMsg(msg)
 
         // If the write failed due to OS buffer being full.
-        case CommandFailed(w: Write) => println("Write Failed")
+        case CommandFailed(w: Write) => println("[C] Write Failed")
 
         // When data received, send it to the listener.
         case Received(data: ByteString) => callback(MessageSerializer
@@ -66,7 +68,7 @@ class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
 
         // Upon receiving the close message.
         case _: ConnectionClosed =>
-          println("Connection Closed")
+          println(s"[C] Connection Closed with [$remote]")
           context.stop(self)
       }
   }

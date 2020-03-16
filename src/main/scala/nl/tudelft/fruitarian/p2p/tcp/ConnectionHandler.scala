@@ -14,7 +14,7 @@ class ConnectionHandler(callback: Msg => Unit) extends Actor {
   def receive: Receive = {
     // When the TCP connection is closed, kill this node.
     case PeerClosed => {
-      println("Client connection closed")
+      println("[S] Client connection closed")
       context.stop(self)
     }
 
