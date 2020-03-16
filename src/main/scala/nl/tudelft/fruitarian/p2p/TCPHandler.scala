@@ -35,7 +35,7 @@ class TCPHandler() {
     val connection = TCPConnection(
       to,
       sys.actorOf(tcp.Client.props(to.socket, serverMessageBus
-        .onIncomingMessage), "TCPClient" + to.socket.getPort)
+        .onIncomingMessage))
     )
     connections = connection :: connections
     connection
