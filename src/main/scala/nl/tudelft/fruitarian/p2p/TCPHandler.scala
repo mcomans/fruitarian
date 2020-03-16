@@ -5,8 +5,9 @@ import java.net.InetSocketAddress
 import akka.actor.{ActorSystem}
 import nl.tudelft.fruitarian.patterns.Observer
 
-class TCPHandler() {
-  val serverHost = new InetSocketAddress("0.0.0.0", 5000)
+class TCPHandler(serverPort: Int = 5000) {
+  // Bind to the machine on the given port.
+  val serverHost = new InetSocketAddress("0.0.0.0", serverPort)
 
   private val serverMessageBus = ServerMessageBus
   private val sys = ActorSystem("TCP")
