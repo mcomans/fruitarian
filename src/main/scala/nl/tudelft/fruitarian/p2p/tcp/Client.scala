@@ -9,6 +9,8 @@ import akka.util.ByteString
 import nl.tudelft.fruitarian.p2p.{Address, MessageSerializer, Msg, SendMsg}
 
 object Client {
+  def messageToWrite(msg: Msg) = Write(ByteString(MessageSerializer.serializeMsg(msg)))
+
   def props(remote: InetSocketAddress, callback: Msg => Unit) =
     Props(classOf[Client], remote, callback);
 }
@@ -41,7 +43,7 @@ class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
       connection ! Register(self)
 
       // Clear message queue when connection was established.
-      queue.foreach((msg: Msg) => connection ! sendMsg(msg))
+      queue.foreach((msg: Msg) => connection ! Client.messageToWrite(msg))
       queue = Nil
 
       println(s"[C] Connection established to [$remote]")
@@ -49,7 +51,7 @@ class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
       context.become {
         // Upon getting binary data, send it through the connection.
         case SendMsg(msg: Msg) =>
-          connection ! sendMsg(msg)
+          connection ! Client.messageToWrite(msg)
 
         // If the write failed due to OS buffer being full.
         case CommandFailed(w: Write) => println("[C] Write Failed")
@@ -70,6 +72,4 @@ class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
           context.stop(self)
       }
   }
-
-  def sendMsg(msg: Msg) = Write(ByteString(MessageSerializer.serializeMsg(msg)))
 }
