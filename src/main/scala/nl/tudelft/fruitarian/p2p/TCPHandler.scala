@@ -2,20 +2,8 @@ package nl.tudelft.fruitarian.p2p
 
 import java.net.InetSocketAddress
 
-import akka.actor.{ActorRef, ActorSystem}
-import akka.io.Tcp.Write
-import akka.util.ByteString
+import akka.actor.{ActorSystem}
 import nl.tudelft.fruitarian.patterns.Observer
-
-object Connections {
-  private var connections: List[TCPConnection] = Nil
-
-  def addConnection(connection: TCPConnection): Unit = {
-    connections = connection :: connections
-  }
-  def findConnectionFor(address: Address): Option[TCPConnection] =
-    connections.find(_.address == address)
-}
 
 class TCPHandler() {
   val serverHost = new InetSocketAddress("0.0.0.0", 5000)
@@ -29,7 +17,6 @@ class TCPHandler() {
   /* Store a list of active connections to other nodes for further reference */
   // TODO: Filter nodes that have been killed.
   private var connections: List[TCPConnection] = Nil
-
 
   def sendMessage(msg: Msg): Unit = {
     val connection: TCPConnection = Connections.findConnectionFor(msg.header.to)
