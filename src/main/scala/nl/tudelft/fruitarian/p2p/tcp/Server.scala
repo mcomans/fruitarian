@@ -38,7 +38,7 @@ class Server(host: InetSocketAddress, callback: Msg => Unit) extends
     // Upon connection to the socket, set up an actor to handle that specific
     // connection.
     case c @ Connected(remote, local) =>
-      val handler = context.actorOf(ConnectionHandler.props(callback))
+      val handler = context.actorOf(ConnectionHandler.props(remote, callback))
       val connection = sender()
       connection ! Register(handler)
       println(s"[S] Client connected from [$remote]")

@@ -60,8 +60,11 @@ class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
         case CommandFailed(w: Write) => println("[C] Write Failed")
 
         // When data received, send it to the listener.
-        case Received(data: ByteString) => callback(MessageSerializer
-          .deserialize(data.utf8String))
+        case Received(data: ByteString) =>
+          val msg: Msg = MessageSerializer.deserialize(data.utf8String)
+          // Set the msg header from field to the actual receiver value.
+          msg.header.from = Address(remote)
+          callback(msg)
 
         // On close command.
         case "close" => connection ! Close
