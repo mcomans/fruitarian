@@ -4,6 +4,10 @@ import nl.tudelft.fruitarian.observers.{BasicLogger, Greeter}
 import nl.tudelft.fruitarian.p2p.{Address, Msg, MsgHeader, MsgType, TCPHandler}
 
 object Main extends App {
+  /* This example will log all the messages that are received, either by the
+  client or server part of the application and greet new clients that connect
+  to the server with the message "Hello World". */
+
   val handler = new TCPHandler()
   handler.addMessageObserver(BasicLogger)
   handler.addMessageObserver(new Greeter(handler))
