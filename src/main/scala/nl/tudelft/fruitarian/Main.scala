@@ -1,28 +1,25 @@
 package nl.tudelft.fruitarian
 
-import java.net.InetSocketAddress
-
-import akka.actor.AbstractActor.Receive
-import akka.actor.{ActorSystem, Kill, PoisonPill, Props}
-import akka.util.ByteString
-import nl.tudelft.fruitarian.tcp.Client.ClientSend
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
+import nl.tudelft.fruitarian.observers.{BasicLogger, Greeter}
+import nl.tudelft.fruitarian.p2p.{Address, Msg, MsgHeader, MsgType, TCPHandler}
 
 object Main extends App {
+  /* This example will log all the messages that are received, either by the
+  client or server part of the application and greet new clients that connect
+  to the server with the message "Hello World". */
 
-  val sys = ActorSystem("system")
-  val serverActor = sys.actorOf(Props[tcp.Server], "TCPServer")
-  val loggerActor = sys.actorOf(Props[Logger], "Logger")
-  val clientActor = sys.actorOf(tcp.Client.props(new InetSocketAddress("localhost", 5000), loggerActor), "TCPClient")
+  val handler = new TCPHandler()
+  handler.addMessageObserver(BasicLogger)
+  handler.addMessageObserver(new Greeter(handler))
 
-  sys.scheduler.scheduleWithFixedDelay(500.millis, 2.seconds, clientActor, ClientSend(ByteString("Heartbeat")))
+  val helloWorldMessage = Msg(MsgHeader(
+    MsgType.Text,
+    Address(handler.serverHost),
+    Address(handler.serverHost)),
+    body = "Hello World".getBytes())
 
+  handler.sendMessage(helloWorldMessage)
 
-  sys.scheduler.scheduleOnce(10.seconds) {
-    println("System shutdown!")
-    // Kill everyone
-    sys.terminate()
-  }
+  Thread.sleep(5000)
+  handler.shutdown()
 }
