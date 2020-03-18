@@ -2,7 +2,7 @@ package nl.tudelft.fruitarian.p2p
 
 import java.net.InetSocketAddress
 
-import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, MessageHeader, TextMessage}
+import nl.tudelft.fruitarian.p2p.messages._
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 
@@ -20,6 +20,9 @@ object MessageSerializer {
     parse(data) match {
       case JObject(("header", h) :: ("body", JString(body)) :: Nil) => h.extract[MessageHeader] match {
         case header @ MessageHeader(TextMessage.MessageType, _, _) => TextMessage.fromHeaderAndBody(header, body)
+        case header @ MessageHeader(EntryResponse.MessageType, _, _) => EntryResponse.fromHeaderAndBody(header, body)
+        case MessageHeader(EntryRequest.MessageType, from, to) => EntryRequest(from, to)
+        case MessageHeader(AnnounceMessage.MessageType, from, to) => AnnounceMessage(from, to)
       }
     }
   }
