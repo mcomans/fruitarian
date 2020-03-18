@@ -22,13 +22,17 @@ def log(str):
 def enqueue_output(out, idx, queue):
     """
     Enqueue some output in order to be written in order later on.
+    Neatly prints the node id in front of the line.
 
     out: output (i.e. of stdout of a process)
     idx: internal index of the node/process
     queue: the queue to enqueue to
     """
     for line in iter(out.readline, b''):
-        queue.put(f"[{idx}] | {line}")
+        prefix = str(idx)
+        if len(prefix) <= 4:
+            prefix = f"{idx}{' ' * (4 - len(prefix))}"
+        queue.put(f"{prefix}| {line}")
     out.close()
 
 
