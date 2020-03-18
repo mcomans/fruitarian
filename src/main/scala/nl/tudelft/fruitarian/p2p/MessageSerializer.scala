@@ -11,7 +11,8 @@ import org.json4s.jackson.JsonMethods._
 
 /** Simple Helper to serialize and deserialize messages. */
 object MessageSerializer {
-  implicit val formats: Formats = DefaultFormats + InetSocketAddressSerializer
+  val messageSerializeFormats: Formats = DefaultFormats + InetSocketAddressSerializer
+  implicit val formats: Formats = messageSerializeFormats
 
   def serializeMsg(msg: FruitarianMessage): String = {
     compact(render(JObject(("header", Extraction.decompose(msg.header)), ("body", JString(msg.serializeBody())))))
