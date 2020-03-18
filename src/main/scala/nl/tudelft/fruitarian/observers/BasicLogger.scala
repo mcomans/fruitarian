@@ -7,5 +7,6 @@ import nl.tudelft.fruitarian.patterns.Observer
 object BasicLogger extends Observer[FruitarianMessage] {
   def receiveUpdate(event: FruitarianMessage): Unit = event match {
     case TextMessage(from, _, message) => println(s"[${from.socket}][TEXT]: $message")
+    case _ => println(event)
   }
 }

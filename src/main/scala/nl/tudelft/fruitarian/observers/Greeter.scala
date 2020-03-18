@@ -11,5 +11,6 @@ class Greeter(handler: TCPHandler) extends Observer[FruitarianMessage] {
       if (body == "Hello World") {
         handler.sendMessage(TextMessage(to, from, "Hi there!"))
       }
+    case _ =>
   }
 }
