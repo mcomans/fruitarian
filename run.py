@@ -8,7 +8,9 @@ import queue
 import threading
 
 PATH_TO_BINARY = './target/universal/stage/bin/fruitarian'
-FIRST_PORT = 5000
+
+DEFAULT_HOST = 'localhost'
+DEFAULT_PORT = 5000
 
 procs = []
 
@@ -54,16 +56,17 @@ def start_first_node():
     procs.append(proc)
 
 
-def add_node(idx, server_port, known_port):
+def add_node(idx, host, server_port, known_port):
     """
     Add a node to the fruitarian network.
 
     idx: the current node index (only for reference within this script and logs)
+    host: the host of the node we want to connect to
     server_port: the port at which to start the server at this node
     known_port: the port of an already known node
     """
     log(f"-- Starting fruitarian node {idx}\n")
-    proc = subprocess.Popen(['./target/universal/stage/bin/fruitarian', str(server_port), 'localhost', str(known_port)],
+    proc = subprocess.Popen(['./target/universal/stage/bin/fruitarian', str(server_port), host, str(known_port)],
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
     procs.append(proc)
 
@@ -75,6 +78,10 @@ def parse_args():
 
     parser.add_argument('-n', '--nodes', type=int, required=True,
                         help="number of nodes to start")
+    parser.add_argument('-j', '--join', type=str, default=DEFAULT_HOST, metavar='HOST',
+                        help="specify host to join (default: localhost)")
+    parser.add_argument('-p', '--port', type=int, default=DEFAULT_PORT,
+                        help="specify known first port to connect to (default: 5000)")
     parser.add_argument('-s', '--skip-packaging', action='store_true',
                         help="skip packaging of the Scala project")
     return parser.parse_args()
@@ -93,18 +100,24 @@ def main():
     # Register handler for SIGINT
     signal.signal(signal.SIGINT, stop)
 
-    # Package the project using sbt
-    if not args.skip_packaging:
-        package()
     if args.nodes < 1:
         sys.exit("At least one node should be started")
+    if not args.skip_packaging:
+        package()
 
-    # Start a first node and add any additional nodes
-    start_first_node()
-    for i in range(1, args.nodes):
+    running_locally = args.join in {'localhost', '127.0.0.1', '0.0.0.0'}
+
+    for i in range(args.nodes):
+        # Start a first node if we are running locally
+        if i == 0 and running_locally:
+            start_first_node()
+        # 'Chain' the ports of the nodes if we are running locally (more interesting)
+        elif running_locally:
+            add_node(i, args.join, args.port + i, args.port + i - 1)
+        else:
+            add_node(i, args.join, args.port + i, args.port)
         # Make sure the nodes have some time to start
         time.sleep(1)
-        add_node(i, FIRST_PORT + i, FIRST_PORT + i - 1)
 
     # Start threads and a queue for queueing the outputs of the processes/nodes
     threads = []
