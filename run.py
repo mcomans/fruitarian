@@ -73,7 +73,7 @@ def main():
     time.sleep(1)
 
     for i in range(1, args.nodes):
-        proc = add_node(i, FIRST_PORT + i, FIRST_PORT)
+        proc = add_node(i, FIRST_PORT + i, FIRST_PORT + i - 1)
         procs.append(proc)
         time.sleep(1)
 
