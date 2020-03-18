@@ -10,7 +10,6 @@ from threading import Thread
 PATH_TO_BINARY = './target/universal/stage/bin/fruitarian'
 FIRST_PORT = 5000
 
-logfile = open('runner_output.txt', 'w')
 procs = []
 writequeue = queue.Queue()
 threads = []
@@ -19,8 +18,6 @@ threads = []
 def log(str):
     sys.stdout.write(str)
     sys.stdout.flush()
-    logfile.write(str)
-    logfile.flush()
 
 
 def enqueue_output(out, idx, queue):
