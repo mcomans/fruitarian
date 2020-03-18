@@ -4,17 +4,29 @@ import signal
 import subprocess
 import sys
 import time
+import queue
+from threading import Thread
 
 PATH_TO_BINARY = './target/universal/stage/bin/fruitarian'
 FIRST_PORT = 5000
 
 logfile = open('runner_output.txt', 'w')
 procs = []
+writequeue = queue.Queue()
+threads = []
 
 
 def log(str):
     sys.stdout.write(str)
+    sys.stdout.flush()
     logfile.write(str)
+    logfile.flush()
+
+
+def enqueue_output(out, idx, queue):
+    for line in iter(out.readline, b''):
+        queue.put(f"[{idx}] | {line}")
+    out.close()
 
 
 def package():
@@ -77,13 +89,29 @@ def main():
         procs.append(proc)
         time.sleep(1)
 
+    for idx, p in enumerate(procs):
+        threads.append(Thread(target=enqueue_output,
+                              args=(p.stdout, idx, writequeue)))
+
+    for t in threads:
+        t.daemon = True
+        t.start()
+
     while True:
-        for i, proc in enumerate(procs):
-            line = proc.stdout.readline()
-            if proc.poll() is not None:
-                break
-            if line:
-                log(f"[{i}] | {line}")
+        try:
+            line = writequeue.get_nowait()
+        except queue.Empty:
+            # Prevent Python process from going haywire
+            time.sleep(.01)
+            pass
+        else:
+            log(line)
+
+        if all(p.poll() is not None for p in procs):
+            break
+
+    log("All nodes stopped")
+    sys.exit(0)
 
 
 if __name__ == '__main__':
