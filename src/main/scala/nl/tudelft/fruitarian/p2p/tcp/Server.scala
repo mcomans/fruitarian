@@ -5,10 +5,11 @@ import java.net.InetSocketAddress
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.io.Tcp._
 import akka.io.{IO, Tcp}
-import nl.tudelft.fruitarian.p2p.{Address, Connections, Msg, TCPConnection}
+import nl.tudelft.fruitarian.p2p.messages.FruitarianMessage
+import nl.tudelft.fruitarian.p2p.{Address, Connections, TCPConnection}
 
 object Server {
-  def props(host: InetSocketAddress, callback: Msg => Unit) =
+  def props(host: InetSocketAddress, callback: FruitarianMessage => Unit) =
     Props(classOf[Server], host, callback);
 }
 
@@ -17,7 +18,7 @@ object Server {
  * Upon another client connecting to the server a tcp.ConnectionHandler actor
  * is set up to deal with the connection.
  */
-class Server(host: InetSocketAddress, callback: Msg => Unit) extends
+class Server(host: InetSocketAddress, callback: FruitarianMessage => Unit) extends
   Actor {
   implicit val system: ActorSystem = context.system
 

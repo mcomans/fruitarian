@@ -2,7 +2,8 @@ package nl.tudelft.fruitarian.p2p
 
 import java.net.InetSocketAddress
 
-import akka.actor.{ActorSystem}
+import akka.actor.ActorSystem
+import nl.tudelft.fruitarian.p2p.messages.FruitarianMessage
 import nl.tudelft.fruitarian.patterns.Observer
 
 class TCPHandler(serverPort: Int = 5000) {
@@ -19,13 +20,13 @@ class TCPHandler(serverPort: Int = 5000) {
   // TODO: Filter nodes that have been killed.
   private var connections: List[TCPConnection] = Nil
 
-  def sendMessage(msg: Msg): Unit = {
+  def sendMessage(msg: FruitarianMessage): Unit = {
     val connection: TCPConnection = Connections.findConnectionFor(msg.header.to)
       .getOrElse(setupConnectionTo(msg.header.to))
     connection.actor ! SendMsg(msg)
   }
 
-  def addMessageObserver(observer: Observer[Msg]): Unit = {
+  def addMessageObserver(observer: Observer[FruitarianMessage]): Unit = {
     serverMessageBus.addObserver(observer)
   }
 

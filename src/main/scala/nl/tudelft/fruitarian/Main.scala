@@ -1,7 +1,8 @@
 package nl.tudelft.fruitarian
 
 import nl.tudelft.fruitarian.observers.{BasicLogger, Greeter}
-import nl.tudelft.fruitarian.p2p.{Address, Msg, MsgHeader, MsgType, TCPHandler}
+import nl.tudelft.fruitarian.p2p.messages.TextMessage
+import nl.tudelft.fruitarian.p2p.{Address, TCPHandler}
 
 object Main extends App {
   /* This example will log all the messages that are received, either by the
@@ -12,11 +13,10 @@ object Main extends App {
   handler.addMessageObserver(BasicLogger)
   handler.addMessageObserver(new Greeter(handler))
 
-  val helloWorldMessage = Msg(MsgHeader(
-    MsgType.Text,
+  val helloWorldMessage = TextMessage(
     Address(handler.serverHost),
-    Address(handler.serverHost)),
-    body = "Hello World".getBytes())
+    Address(handler.serverHost),
+    "Hello World")
 
   handler.sendMessage(helloWorldMessage)
 

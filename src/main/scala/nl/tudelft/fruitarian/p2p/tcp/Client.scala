@@ -6,12 +6,13 @@ import akka.actor.{Actor, ActorSystem, Props}
 import akka.io.Tcp._
 import akka.io.{IO, Tcp}
 import akka.util.ByteString
-import nl.tudelft.fruitarian.p2p.{Address, MessageSerializer, Msg, SendMsg}
+import nl.tudelft.fruitarian.p2p.messages.FruitarianMessage
+import nl.tudelft.fruitarian.p2p.{Address, MessageSerializer, SendMsg}
 
 object Client {
-  def messageToWrite(msg: Msg) = Write(ByteString(MessageSerializer.serializeMsg(msg)))
+  def messageToWrite(msg: FruitarianMessage) = Write(ByteString(MessageSerializer.serializeMsg(msg)))
 
-  def props(remote: InetSocketAddress, callback: Msg => Unit) =
+  def props(remote: InetSocketAddress, callback: FruitarianMessage => Unit) =
     Props(classOf[Client], remote, callback);
 }
 
@@ -20,10 +21,10 @@ object Client {
  * listener actor up to date on what happens on that TCP connection.
  * @param remote The remote address to connect to.
  */
-class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
+class Client(remote: InetSocketAddress, callback: FruitarianMessage => Unit) extends
   Actor {
   implicit val system: ActorSystem = context.system
-  var queue: List[Msg] = Nil
+  var queue: List[FruitarianMessage] = Nil
 
   // Connect to the desired tcp remote.
   IO(Tcp) ! Connect(remote)
@@ -35,7 +36,7 @@ class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
       context.stop(self)
 
     // When a message is sent but the connection is not yet ready, enqueue it.
-    case SendMsg(msg: Msg) => queue = msg :: queue
+    case SendMsg(msg: FruitarianMessage) => queue = msg :: queue
 
     // Upon connection success.
     case c @ Connected(remote, local) =>
@@ -43,14 +44,14 @@ class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
       connection ! Register(self)
 
       // Clear message queue when connection was established.
-      queue.foreach((msg: Msg) => connection ! Client.messageToWrite(msg))
+      queue.foreach((msg: FruitarianMessage) => connection ! Client.messageToWrite(msg))
       queue = Nil
 
       println(s"[C] Connection established to [$remote]")
 
       context.become {
         // Upon getting binary data, send it through the connection.
-        case SendMsg(msg: Msg) =>
+        case SendMsg(msg: FruitarianMessage) =>
           connection ! Client.messageToWrite(msg)
 
         // If the write failed due to OS buffer being full.
@@ -58,7 +59,7 @@ class Client(remote: InetSocketAddress, callback: Msg => Unit) extends
 
         // When data received, send it to the listener.
         case Received(data: ByteString) =>
-          val msg: Msg = MessageSerializer.deserialize(data.utf8String)
+          val msg: FruitarianMessage = MessageSerializer.deserialize(data.utf8String)
           // Set the msg header from field to the actual receiver value.
           msg.header.from = Address(remote)
           callback(msg)

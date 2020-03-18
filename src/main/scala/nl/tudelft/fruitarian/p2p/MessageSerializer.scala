@@ -2,29 +2,28 @@ package nl.tudelft.fruitarian.p2p
 
 import java.net.InetSocketAddress
 
+import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, MessageHeader, TextMessage}
 import org.json4s._
-import org.json4s.jackson.Serialization.{read, write}
+import org.json4s.jackson.JsonMethods._
 
 // Simple case class serialisation with help of:
 // https://commitlogs.com/2017/01/14/serialize-deserialize-json-with-json4s-in-scala/
 
 /** Simple Helper to serialize and deserialize messages. */
 object MessageSerializer {
-  implicit val formats: Formats = DefaultFormats + MsgTypeSerializer + InetSocketAddressSerializer
+  implicit val formats: Formats = DefaultFormats + InetSocketAddressSerializer
 
-  def serializeMsg(msg: Msg): String = write(msg)
-  def deserialize(data: String): Msg = {
-    read[Msg](data)
+  def serializeMsg(msg: FruitarianMessage): String = {
+    compact(render(JObject(("header", Extraction.decompose(msg.header)), ("body", JString(msg.serializeBody())))))
+  }
+  def deserialize(data: String): FruitarianMessage = {
+    parse(data) match {
+      case JObject(("header", h) :: ("body", JString(body)) :: Nil) => h.extract[MessageHeader] match {
+        case header @ MessageHeader(TextMessage.MessageType, _, _) => TextMessage.fromHeaderAndBody(header, body)
+      }
+    }
   }
 }
-
-case object MsgTypeSerializer extends CustomSerializer[MsgType.Value](format => ( {
-  case JString("BYTES") => MsgType.Bytes
-  case JString("TEXT") => MsgType.Text
-}, {
-  case MsgType.Bytes => JString("BYTES")
-  case MsgType.Text => JString("TEXT")
-}))
 
 case object InetSocketAddressSerializer extends
   CustomSerializer[InetSocketAddress](format => ({

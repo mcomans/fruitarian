@@ -1,5 +1,10 @@
 package nl.tudelft.fruitarian.p2p
 
+import java.net.InetSocketAddress
+
+import akka.actor.ActorRef
+import nl.tudelft.fruitarian.p2p.messages.FruitarianMessage
+
 /** Singleton for connections management. */
 object Connections {
   private var connections: List[TCPConnection] = Nil
@@ -12,3 +17,7 @@ object Connections {
 
   def closeConnections(): Unit = connections.foreach(_.actor ! "close")
 }
+case class Address(socket: InetSocketAddress)
+case class TCPConnection(address: Address, actor: ActorRef)
+/** Case class used to define an actor command to given send message. */
+final case class SendMsg(msg: FruitarianMessage)
