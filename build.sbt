@@ -14,3 +14,6 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion % Test,
   "org.scalatest" %% "scalatest" % "3.1.0" % Test
 )
+
+enablePlugins(JavaAppPackaging)
+mainClass in Compile := Some("nl.tudelft.fruitarian.Main")
