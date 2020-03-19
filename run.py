@@ -140,16 +140,16 @@ def main():
     print_thread.daemon = True
     print_thread.start()
 
-    start_network = args.join is None
-    host = 'localhost' if args.join is None or args.join in {
+    new_network = args.join is None
+    host = 'localhost' if new_network or args.join in {
         'localhost', '127.0.0.1', '0.0.0.0'} else args.join
 
     for i in range(args.nodes):
         # Start a first node if we are not joining another host
-        if i == 0 and start_network:
+        if i == 0 and new_network:
             start_first_node()
         # 'Chain' the ports of the nodes if we are starting a network (for fun)
-        elif start_network:
+        elif new_network:
             add_node(i, host, args.port + i, args.port + i - 1)
         # Else, add nodes that join other host and known port
         else:
