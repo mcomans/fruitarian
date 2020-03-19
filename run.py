@@ -108,8 +108,8 @@ def parse_args():
 
     parser.add_argument('-n', '--nodes', type=int, required=True,
                         help="number of nodes to start")
-    parser.add_argument('-j', '--join', type=str, default=DEFAULT_HOST, metavar='HOST',
-                        help="specify host to join (default: localhost)")
+    parser.add_argument('-j', '--join', type=str, nargs='?', const=DEFAULT_HOST, default=None, metavar='HOST',
+                        help="specify host to join already existing network (default when HOST unspecified: localhost)")
     parser.add_argument('-p', '--port', type=int, default=DEFAULT_PORT,
                         help="specify known first port to connect to (default: 5000)")
     parser.add_argument('-s', '--skip-packaging', action='store_true',
@@ -140,17 +140,20 @@ def main():
     print_thread.daemon = True
     print_thread.start()
 
-    running_locally = args.join in {'localhost', '127.0.0.1', '0.0.0.0'}
+    start_network = args.join is None
+    host = 'localhost' if args.join is None or args.join in {
+        'localhost', '127.0.0.1', '0.0.0.0'} else args.join
 
     for i in range(args.nodes):
-        # Start a first node if we are running locally
-        if i == 0 and running_locally:
+        # Start a first node if we are not joining another host
+        if i == 0 and start_network:
             start_first_node()
-        # 'Chain' the ports of the nodes if we are running locally (more interesting)
-        elif running_locally:
-            add_node(i, args.join, args.port + i, args.port + i - 1)
+        # 'Chain' the ports of the nodes if we are starting a network (for fun)
+        elif start_network:
+            add_node(i, host, args.port + i, args.port + i - 1)
+        # Else, add nodes that join other host and known port
         else:
-            add_node(i, args.join, args.port + i, args.port)
+            add_node(i, host, args.port + i, args.port)
         # Make sure the nodes have some time to start
         time.sleep(1)
 
