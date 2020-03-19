@@ -1,13 +1,12 @@
 package nl.tudelft.fruitarian.p2p.messages
 
-import nl.tudelft.fruitarian.models.Peer
 import nl.tudelft.fruitarian.p2p.{Address, MessageSerializer}
-import org.json4s.jackson.Serialization.{read, write}
 import org.json4s.Formats
+import org.json4s.jackson.Serialization.{read, write}
 
-case class EntryResponse(from: Address, to: Address, peerList: List[Peer]) extends FruitarianMessage(MessageHeader(EntryResponse.MessageType, from, to)) {
+case class EntryResponse(from: Address, to: Address, entryInfo: (String, List[Address])) extends FruitarianMessage(MessageHeader(EntryResponse.MessageType, from, to)) {
   override def serializeBody(): String = {
-    write(peerList)
+    write(entryInfo)
   }
 }
 
@@ -16,6 +15,6 @@ case object EntryResponse {
   implicit val formats: Formats = MessageSerializer.messageSerializeFormats
 
   def fromHeaderAndBody(header: MessageHeader, body: String): FruitarianMessage = {
-    EntryResponse(header.from, header.to, read[List[Peer]](body))
+    EntryResponse(header.from, header.to, read[(String, List[Address])](body))
   }
 }
