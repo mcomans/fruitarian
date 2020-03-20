@@ -1,9 +1,25 @@
 # Fruitarian
 A clone of the herbivore anonymous communication protocol
 
+## Running
+
+Running the project can best be done using the `run.py` script.
+Make sure you have Python 3 installed.
+Then, simply run:
+
+```shell
+python run.py -n 3
+```
+
+This will build and package the project and start a Fruitarian network with 3 nodes on localhost that connect to each other through subsequent ports.
+The script can also be used to connect to an existing network using the `-j` and `-p` flags to specify which host and port to join respectively.
+If you already have a packaged version of the project and do not want to repackage, you can skip this using the `-s` flag.
+In case you need more information, simply add the `-h` flag.
+
 ## Setup
 
 We use the LTS version of the JDK which at this point is Java 11.
+Make sure you have Scala and sbt installed.
 
 ### IntelliJ IDEA
 Make sure to download the [scala plugin](https://www.jetbrains.com/help/idea/discover-intellij-idea-for-scala.html).
