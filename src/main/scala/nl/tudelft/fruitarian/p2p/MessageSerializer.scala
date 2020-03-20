@@ -23,7 +23,7 @@ object MessageSerializer {
         case header @ MessageHeader(TextMessage.MessageType, _, _) => TextMessage.fromHeaderAndBody(header, body)
         case header @ MessageHeader(EntryResponse.MessageType, _, _) => EntryResponse.fromHeaderAndBody(header, body)
         case MessageHeader(EntryRequest.MessageType, from, to) => EntryRequest(from, to)
-        case header @ MessageHeader(SeedMessage.MessageType, _, _) => SeedMessage.fromHeaderAndBody(header, body)
+        case header @ MessageHeader(AnnounceMessage.MessageType, _, _) => AnnounceMessage.fromHeaderAndBody(header, body)
       }
     }
   }
