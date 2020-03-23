@@ -1,6 +1,6 @@
 package nl.tudelft.fruitarian.observers
 
-import nl.tudelft.fruitarian.models.{NetworkInfo, Peer}
+import nl.tudelft.fruitarian.models.{NetworkInfo, Peer, DCnet}
 import nl.tudelft.fruitarian.p2p.TCPHandler
 import nl.tudelft.fruitarian.p2p.messages._
 import nl.tudelft.fruitarian.patterns.Observer
@@ -39,6 +39,8 @@ class EntryObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Obser
 	// TODO: remove this later
 	def printRandomNumbersPeers(): Unit = {
 		println("===============")
+		var bytes = DCnet.encryptMessage("hoi", networkInfo.cliquePeers.toList)
+		println(new String(bytes))
 		networkInfo.cliquePeers.foreach(p => {
 			println(p)
 			println(p.getRandomNumber)
