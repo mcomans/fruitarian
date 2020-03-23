@@ -4,7 +4,8 @@ import nl.tudelft.fruitarian.p2p.Address
 
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
-class NetworkInfo {
+class NetworkInfo(centerNode: Boolean) {
+  val center: Boolean = centerNode
   val cliquePeers: ArrayBuffer[Peer] = ArrayBuffer[Peer]()
 
   def getPeers: List[Address] = {

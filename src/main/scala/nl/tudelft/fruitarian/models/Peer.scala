@@ -12,7 +12,7 @@ case class Peer(address: Address, seed: Int) {
 	}
 
 	def getRandomNumber: Int = {
-		r.nextInt()
+		r.nextInt() & 0xFF
 	}
 }
 
