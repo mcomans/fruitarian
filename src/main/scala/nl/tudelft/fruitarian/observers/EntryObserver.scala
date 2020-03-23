@@ -5,12 +5,10 @@ import nl.tudelft.fruitarian.p2p.TCPHandler
 import nl.tudelft.fruitarian.p2p.messages._
 import nl.tudelft.fruitarian.patterns.Observer
 
-import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
 class EntryObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Observer[FruitarianMessage] {
   val r = new Random()
-	var responses = new ListBuffer[List[Byte]]
 
   override def receiveUpdate(event: FruitarianMessage): Unit = event match {
     case EntryRequest(from, to) =>
@@ -18,7 +16,6 @@ class EntryObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Obser
 	    println(networkInfo.getPeers)
 	    handler.sendMessage(EntryResponse(to, from, (seed.toString, networkInfo.getPeers)))
 	    networkInfo.cliquePeers += Peer(from, seed)
-	    printRandomNumbersPeers()
     case EntryResponse(from, to, entryInfo) =>
 	    entryInfo._2.foreach(p => {
 		    val seed = getSeed
@@ -26,27 +23,25 @@ class EntryObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Obser
 		    handler.sendMessage(AnnounceMessage(to, p, seed.toString))
 	    })
 	    networkInfo.cliquePeers += Peer(from, Integer.parseInt(entryInfo._1))
-	    printRandomNumbersPeers()
     case AnnounceMessage(from, to, seed) =>
 	    networkInfo.cliquePeers += Peer(from, Integer.parseInt(seed))
 
-	    //Test dc net
-	    printRandomNumbersPeers()
-		  if (networkInfo.center) {
+	    println(networkInfo.cliquePeers)
+		  if (networkInfo.center && networkInfo.cliquePeers.length == 3) {
 			  networkInfo.cliquePeers.foreach(p => {
 				  handler.sendMessage(TransmitRequest(to, p.address))
 			  })
 		  }
     case TransmitRequest(from, to) =>
-		  handler.sendMessage(TransmitMessage(to, from, DCnet.getRandom(networkInfo.cliquePeers.toList, 1)))
+	    handler.sendMessage(TransmitMessage(to, from, DCnet.getRandom(networkInfo.cliquePeers.toList, 9)))
     case TransmitMessage(from, to, message) =>
-		  responses = responses += message
+		  networkInfo.responses += message
 
-	    println(responses)
-	    if (responses.length == 2) {
-		    var encryptedMessage = DCnet.encryptMessage("4", networkInfo.cliquePeers.toList)
-		    var decryptedMessage = DCnet.decryptMessage((responses += encryptedMessage).toList)
-		    println("RESPONSE: " + decryptedMessage)
+	    if (networkInfo.responses.length == 3 && networkInfo.slot) {
+		      networkInfo.slot = false
+			    var encryptedMessage = DCnet.encryptMessage("Hoi Lullo", networkInfo.cliquePeers.toList)
+			    var decryptedMessage = DCnet.decryptMessage((networkInfo.responses += encryptedMessage).toList)
+			    println("RESPONSE: " + decryptedMessage)
 	    }
   }
 
@@ -54,15 +49,4 @@ class EntryObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Obser
   def getSeed: Int = {
 	  r.nextInt()
   }
-
-	// The function below prints the same random number for each pair of nodes.
-	// TODO: remove this later
-	def printRandomNumbersPeers(): Unit = {
-		println("===============")
-		networkInfo.cliquePeers.foreach(p => {
-			println(p)
-			println(p.getRandomNumber)
-		})
-		println("===============")
-	}
 }

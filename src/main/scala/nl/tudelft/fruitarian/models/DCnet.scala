@@ -8,19 +8,13 @@ object DCnet {
 
 	def encryptMessage(message: String, peers: List[Peer]): List[Byte] = {
 		val rand = getRandom(peers, message.length)
-		rand.foreach(b => {
-			println("In encrypt: " + b.toBinaryString)
-		})
 		var index = 0
 		var res = new ArrayBuffer[Byte]
 		message.foreach(c => {
-			index = 0
-//			val binaryChar = c.toByte.toBinaryString
-//			val binaryRand = rand(index).toBinaryString
 			val binaryChar = getBinaryFormat(c.toByte)
 			val binaryRand = getBinaryFormat(rand(index))
-			println("Encrypt: " + convertToDCMessage(binaryChar, binaryRand).toBinaryString)
 			res += convertToDCMessage(binaryChar, binaryRand)
+			index += 1
 		})
 		res.toList
 	}
@@ -30,14 +24,12 @@ object DCnet {
 	}
 
 	def convertToDCMessage(message: String, rand: String): Byte = {
-		println("MESSAGE: " + message)
-		println("RAND: " + rand)
 		val res = (message zip rand).map {
 			case ('0', b) => b
 			case ('1', '1') => '0'
 			case ('1', '0') => '1'
 		}
-		println("CONVERTED:" + res.mkString(""))
+		val x = Integer.parseInt(res.mkString(""), 2).toByte
 		Integer.parseInt(res.mkString(""), 2).toByte
 	}
 
@@ -48,12 +40,10 @@ object DCnet {
 			res = res.map(b => {
 				val bytes = l(index)
 				index += 1
-				println("Decrypt: " + bytes.toBinaryString)
 				(b ^ bytes).toByte
 			})
 		})
 		res.foreach(b => {
-			println("XOR RANDOM: " + b.toBinaryString)
 		})
 		new String(res.toArray)
 	}
@@ -72,12 +62,8 @@ object DCnet {
 			res = res.map(b => {
 				val bytes = randomBytes(index)
 				index += 1
-				println("Random: " + p.address + " - " + bytes.toBinaryString)
 				(b ^ bytes).toByte
 			})
-		})
-		res.foreach(b => {
-			println("XOR RANDOM: " + b.toBinaryString)
 		})
 		res.toList
 	}
