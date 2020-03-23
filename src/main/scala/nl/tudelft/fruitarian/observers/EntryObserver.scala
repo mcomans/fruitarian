@@ -37,9 +37,8 @@ class EntryObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Obser
     case TransmitMessage(from, to, message) =>
 		  networkInfo.responses += message
 
-	    if (networkInfo.responses.length == 3 && networkInfo.slot) {
-		      networkInfo.slot = false
-			    var encryptedMessage = DCnet.encryptMessage("Hoi Lullo", networkInfo.cliquePeers.toList)
+	    if (networkInfo.responses.length == 3) {
+			    var encryptedMessage = DCnet.encryptMessage("Hi there!", networkInfo.cliquePeers.toList)
 			    var decryptedMessage = DCnet.decryptMessage((networkInfo.responses += encryptedMessage).toList)
 			    println("RESPONSE: " + decryptedMessage)
 	    }
