@@ -27,14 +27,12 @@ object DCnet {
 	def encryptMessage(message: String, peers: List[Peer]): List[Byte] = {
 		// Get xor value of the random values of all peers.
 		val rand = getRandom(peers)
-		var index = 0
 		var res = new ArrayBuffer[Byte]
 		// Convert each char of the message to a dc-net message.
-		formatMessageSize(message).foreach(c => {
-			val binaryChar = getBinaryFormat(c.toByte)
-			val binaryRand = getBinaryFormat(rand(index))
+		formatMessageSize(message).zipWithIndex.foreach(c => {
+			val binaryChar = getBinaryFormat(c._1.toByte)
+			val binaryRand = getBinaryFormat(rand(c._2))
 			res += convertToDCMessage(binaryChar, binaryRand)
-			index += 1
 		})
 		res.toList
 	}
