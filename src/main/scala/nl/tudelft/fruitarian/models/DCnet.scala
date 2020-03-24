@@ -8,7 +8,7 @@ object DCnet {
 	// For the node that needs to transmit a random message.
 	// It calculates the xor value of the random values of all peers.
 	def getRandom(peers: List[Peer]): List[Byte] = {
-		var res = getEmptyArray
+		var res = Array.fill[Byte](MESSAGE_SIZE)(0)
 		peers.foreach(p => {
 			// Get random bytes depending on the size of the message.
 			val randomBytes = p.getRandomByteArray(MESSAGE_SIZE)
