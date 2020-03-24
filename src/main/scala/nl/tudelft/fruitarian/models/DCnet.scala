@@ -46,16 +46,11 @@ object DCnet {
 		var res = getEmptyArray
 		// Loop over the byte lists from the other nodes.
 		values.foreach(l => {
-			var index = 0
 			// Calculate xor value.
-			res = res.map(b => {
-				val bytes = l(index)
-				index += 1
-				(b ^ bytes).toByte
+			res = res.zipWithIndex.map(b => {
+				val bytes = l(b._2)
+				((b._1) ^ bytes).toByte
 			})
-		})
-		res.foreach(b => {
-		})
 		// The original message.
 		new String(res.toArray).stripTrailing()
 	}
