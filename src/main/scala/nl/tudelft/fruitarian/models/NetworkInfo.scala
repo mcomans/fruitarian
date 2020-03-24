@@ -11,8 +11,6 @@ class NetworkInfo(centerNode: Boolean) {
 
   // Returns the addresses of all peers.
   def getPeers: List[Address] = {
-    val r = new ListBuffer[Address]
-    cliquePeers.foreach(p => r += p.address)
-    r.toList
+    cliquePeers.map(p => p.address).toList
   }
 }
