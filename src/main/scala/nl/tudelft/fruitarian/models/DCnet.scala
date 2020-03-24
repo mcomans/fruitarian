@@ -86,6 +86,7 @@ object DCnet {
 		res
 	}
 
+	// Checks the message size and throws an error when it is too long.
 	def formatMessageSize(message: String): String = message.length compare MESSAGE_SIZE match {
 		case 0 => message
 		case 1 => throw new Exception("Message size exceeded. Maximum message size is "
