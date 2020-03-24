@@ -9,6 +9,7 @@ class NetworkInfo(centerNode: Boolean) {
   val cliquePeers: ArrayBuffer[Peer] = ArrayBuffer[Peer]()
   var responses = new ListBuffer[List[Byte]]
 
+  // Returns the addresses of all peers.
   def getPeers: List[Address] = {
     val r = new ListBuffer[Address]
     cliquePeers.foreach(p => r += p.address)
