@@ -59,7 +59,7 @@ object DCnet {
 		res.foreach(b => {
 		})
 		// The original message.
-		new String(res.toArray)
+		new String(res.toArray).stripTrailing()
 	}
 
 	// Converts a byte into a binary string format.
