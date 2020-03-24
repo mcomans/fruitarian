@@ -39,7 +39,6 @@ class EntryObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Obser
     case TransmitRequest(from, to) =>
 	    // Todo: replace this when message transfer is implemented.
 	    // Send message back to the center node with random xor value.
-	    // Message size should be known as well.
 	    handler.sendMessage(TransmitMessage(to, from, DCnet.getRandom(networkInfo.cliquePeers.toList)))
     case TransmitMessage(from, to, message) =>
 		  networkInfo.responses += message
