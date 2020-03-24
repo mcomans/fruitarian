@@ -3,15 +3,15 @@ package nl.tudelft.fruitarian.models
 import scala.collection.mutable.ArrayBuffer
 
 object DCnet {
-	val MESSAGE_SIZE = 1
+	val MESSAGE_SIZE = 280
 
 	// For the node that needs to transmit a random message.
 	// It calculates the xor value of the random values of all peers.
-	def getRandom(peers: List[Peer], size: Int): List[Byte] = {
-		var res = getEmptyArray(size)
+	def getRandom(peers: List[Peer]): List[Byte] = {
+		var res = getEmptyArray
 		peers.foreach(p => {
 			// Get random bytes depending on the size of the message.
-			val randomBytes = p.getRandomByteArray(size)
+			val randomBytes = p.getRandomByteArray(MESSAGE_SIZE)
 			var index = 0
 			// Calculate xor value.
 			res = res.map(b => {
@@ -28,11 +28,11 @@ object DCnet {
 	// based on the the DC-net method.
 	def encryptMessage(message: String, peers: List[Peer]): List[Byte] = {
 		// Get xor value of the random values of all peers.
-		val rand = getRandom(peers, message.length)
+		val rand = getRandom(peers)
 		var index = 0
 		var res = new ArrayBuffer[Byte]
 		// Convert each char of the message to a dc-net message.
-		message.foreach(c => {
+		formatMessageSize(message).foreach(c => {
 			val binaryChar = getBinaryFormat(c.toByte)
 			val binaryRand = getBinaryFormat(rand(index))
 			res += convertToDCMessage(binaryChar, binaryRand)
@@ -45,7 +45,7 @@ object DCnet {
 	// Decrypts list of bytes by taking the xor value and converting it to a
 	// string value: the original message.
 	def decryptMessage(values: List[List[Byte]]): String = {
-		var res = getEmptyArray(values(0).length)
+		var res = getEmptyArray
 		// Loop over the byte lists from the other nodes.
 		values.foreach(l => {
 			var index = 0
@@ -79,10 +79,17 @@ object DCnet {
 		Integer.parseInt(res.mkString(""), 2).toByte
 	}
 
-	// Get empty array with specific size.
-	def getEmptyArray(size: Int): ArrayBuffer[Byte] = {
+	// Get empty array.
+	def getEmptyArray: ArrayBuffer[Byte] = {
 		var res = new ArrayBuffer[Byte]
-		1 to size foreach { _ => res += 0 }
+		1 to MESSAGE_SIZE foreach { _ => res += 0 }
 		res
+	}
+
+	def formatMessageSize(message: String): String = message.length compare MESSAGE_SIZE match {
+		case 0 => message
+		case 1 => throw new Exception("Message size exceeded. Maximum message size is "
+			+ MESSAGE_SIZE + " characters.")
+		case -1 => message.concat(List.fill(MESSAGE_SIZE - message.length)(' ').mkString)
 	}
 }
