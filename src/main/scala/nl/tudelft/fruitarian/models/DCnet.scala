@@ -12,12 +12,10 @@ object DCnet {
 		peers.foreach(p => {
 			// Get random bytes depending on the size of the message.
 			val randomBytes = p.getRandomByteArray(MESSAGE_SIZE)
-			var index = 0
 			// Calculate xor value.
-			res = res.map(b => {
-				val bytes = randomBytes(index)
-				index += 1
-				(b ^ bytes).toByte
+			res = res.zipWithIndex.map(b => {
+				val bytes = randomBytes(b._2)
+				((b._1) ^ bytes).toByte
 			})
 		})
 		res.toList
