@@ -15,7 +15,7 @@ object DCnet {
 			// Calculate xor value.
 			res = res.zipWithIndex.map(b => {
 				val bytes = randomBytes(b._2)
-				((b._1) ^ bytes).toByte
+				(b._1 ^ bytes).toByte
 			})
 		})
 		res.toList
@@ -41,16 +41,17 @@ object DCnet {
 	// Decrypts list of bytes by taking the xor value and converting it to a
 	// string value: the original message.
 	def decryptMessage(values: List[List[Byte]]): String = {
-		var res = getEmptyArray
+		var res = Array.fill[Byte](MESSAGE_SIZE)(0)
 		// Loop over the byte lists from the other nodes.
 		values.foreach(l => {
 			// Calculate xor value.
 			res = res.zipWithIndex.map(b => {
 				val bytes = l(b._2)
-				((b._1) ^ bytes).toByte
+				(b._1 ^ bytes).toByte
 			})
+		})
 		// The original message.
-		new String(res.toArray).stripTrailing()
+		new String(res).replaceAll("""(?m)\s+$""","")
 	}
 
 	// Converts a byte into a binary string format.
@@ -68,13 +69,6 @@ object DCnet {
 			case ('1', '0') => '1'
 		}
 		Integer.parseInt(res.mkString(""), 2).toByte
-	}
-
-	// Get empty array.
-	def getEmptyArray: ArrayBuffer[Byte] = {
-		var res = new ArrayBuffer[Byte]
-		1 to MESSAGE_SIZE foreach { _ => res += 0 }
-		res
 	}
 
 	// Checks the message size and throws an error when it is too long.
