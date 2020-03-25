@@ -108,6 +108,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         //  produce nonsense messages in case no one sends an actual encrypted
         //  message.
         messageSent = messageQueue.dequeue()
+        println(s"[C] Sent my message: '$messageSent'")
         handler.sendMessage(TransmitMessage(to, from, DCnet.encryptMessage(messageSent, networkInfo.cliquePeers.toList)))
       } else {
         // Else send a random message.
