@@ -7,7 +7,7 @@ import nl.tudelft.fruitarian.patterns.Observer
 
 import scala.collection.mutable
 import scala.concurrent.{Future, Promise}
-import scala.util.Try
+import scala.util.{Random, Try}
 
 /**
  * This class handles the Transmission message phase. This means that for each
@@ -18,9 +18,11 @@ import scala.util.Try
 class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Observer[FruitarianMessage] {
 
   var messageRound: Promise[Boolean] = _
-  val MESSAGE_ROUND_TIMEOUT = 2000;
+  val MESSAGE_ROUND_TIMEOUT = 2000
+  val BACKOFF_RANGE = 10
   val messageQueue = new mutable.Queue[String]()
   var messageSent: String = ""
+  var backoff = 0
 
   def queueMessage(message: String): Unit = {
     if (message.length > DCnet.MESSAGE_SIZE) {
@@ -84,9 +86,10 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
 
   override def receiveUpdate(event: FruitarianMessage): Unit = event match {
     case TransmitRequest(from, to) =>
-      if (messageQueue.nonEmpty && messageSent.isEmpty) {
+      if (messageQueue.nonEmpty && messageSent.isEmpty && backoff == 0) {
         // If we have a message to send and are not waiting for confirmation
-        // of a previous message, send the next message.
+        // of a previous message, send the next message. If we failed to send
+        // a message and have a backoff we have to wait this cycle.
         // TODO: This 'just-send-it' behaviour can cause collisions, as
         //  multiple nodes could send a message at the same time. It wil also
         //  produce nonsense messages in case no one sends an actual encrypted
@@ -97,6 +100,8 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         // Else send a random message.
         handler.sendMessage(TransmitMessage(to, from, DCnet.getRandom(networkInfo.cliquePeers.toList)))
       }
+      // Decrease the backoff by one until 0.
+      backoff = math.max(0, backoff - 1)
 
     case TransmitMessage(_, _, message) =>
       DCnet.responses += message
@@ -115,12 +120,15 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
       }
 
     case TextMessage(_, _, msg) if !messageSent.isEmpty =>
-      // If we recently sent a message, the next TextMessage received should be this message.
-      // If not we need to resend the message.
+      // If we recently sent a message, the next TextMessage received should be
+      // this message. If not we need to resend the message.
       if (msg != messageSent) {
         // If the message is not as sent, queue the message for sending again.
-        println("[C] Message not sent correctly, enqueued again...")
+        // We apply a random backoff in amount of cycles to hopefully prevent
+        // another collision.
         queueMessage(messageSent)
+        backoff = new Random().nextInt(BACKOFF_RANGE)
+        println(s"[C] Message not sent correctly, enqueued again in $backoff cycles.")
       }
       // Unblock the message sending process to allow the next message or a resend.
       messageSent = ""
