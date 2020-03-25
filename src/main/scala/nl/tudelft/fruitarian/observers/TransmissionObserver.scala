@@ -68,6 +68,10 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         if (!messageRound.isCompleted) {
           messageRound failure (_)
           println("[S] Message round timed out, retrying...")
+
+          // Clear possible remaining responses.
+          DCnet.clearResponses()
+
           startMessageRound()
         }
       }

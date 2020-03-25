@@ -66,7 +66,7 @@ object DCnet {
 				"match the amount of responses.")
 		}
 		val msg = decryptMessage(responses.toList)
-		responses = new ListBuffer[List[Byte]]
+		clearResponses()
 		transmitRequestsSent = 0
 		msg
 	}
@@ -111,5 +111,9 @@ object DCnet {
 		case 1 => throw new Exception("Message size exceeded. Maximum message size is "
 			+ MESSAGE_SIZE + " characters.")
 		case -1 => message.concat(List.fill(MESSAGE_SIZE - message.length)(' ').mkString)
+	}
+
+	def clearResponses() = {
+		responses = new ListBuffer[List[Byte]]()
 	}
 }
