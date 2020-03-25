@@ -58,6 +58,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
     if (networkInfo.center) {
       // Clear possible remaining responses.
       DCnet.clearResponses()
+      messageRound = Promise[Boolean]()
 
       // Send a TransmitRequest to all peers and itself (as this node is also part of the clique).
       sendMessageToClique((address: Address) => TransmitRequest(networkInfo.ownAddress, address))
@@ -67,7 +68,6 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
 
       println(s"[S] Started Message round for ${DCnet.transmitRequestsSent} node(s).")
 
-      messageRound = Promise[Boolean]()
       Future {
         // TODO: Find a better way to sleep, this seems to cause the logs to be somewhat delayed.
         Thread.sleep(MESSAGE_ROUND_TIMEOUT)
@@ -117,7 +117,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
       backoff = math.max(0, backoff - 1)
 
     case TransmitMessage(_, _, message) =>
-      DCnet.responses += message
+      DCnet.appendResponse(message)
       if (DCnet.canDecrypt) {
         // Complete the messageRound promise to avoid the timeout call.
         messageRound complete Try(true)

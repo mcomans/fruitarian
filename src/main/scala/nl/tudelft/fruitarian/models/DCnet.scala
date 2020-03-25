@@ -7,7 +7,23 @@ object DCnet {
 	val MESSAGE_SIZE = 280
 
 	var transmitRequestsSent = 0
-	var responses = new ListBuffer[List[Byte]]
+
+	// All interactions with this array should be synchronised using the
+	// functions defined below. Even in this class. This avoids different threads
+	// reading or writing to different versions.
+	private var responses = new ListBuffer[List[Byte]]
+
+	def appendResponse(response: List[Byte]): Unit = this.synchronized {
+		responses += response
+	}
+
+	def retrieveResponses: ListBuffer[List[Byte]] = this.synchronized {
+		responses
+	}
+
+	def clearResponses(): Unit = this.synchronized {
+		responses = new ListBuffer[List[Byte]]()
+	}
 
 	// Get random seed.
 	def getSeed: Int = {
@@ -49,8 +65,8 @@ object DCnet {
 	/**
 	 * @return whether we have enough messages to decrypt.
 	 */
-	def canDecrypt: Boolean = {
-		transmitRequestsSent > 0 && transmitRequestsSent == responses.length
+	def canDecrypt: Boolean = this.synchronized {
+		transmitRequestsSent > 0 && transmitRequestsSent == retrieveResponses.length
 	}
 
 	/**
@@ -65,7 +81,7 @@ object DCnet {
 			throw new Exception("The amount of TransmitRequests sent does not " +
 				"match the amount of responses.")
 		}
-		val msg = decryptMessage(responses.toList)
+		val msg = decryptMessage(retrieveResponses.toList)
 		clearResponses()
 		transmitRequestsSent = 0
 		msg
@@ -111,9 +127,5 @@ object DCnet {
 		case 1 => throw new Exception("Message size exceeded. Maximum message size is "
 			+ MESSAGE_SIZE + " characters.")
 		case -1 => message.concat(List.fill(MESSAGE_SIZE - message.length)(' ').mkString)
-	}
-
-	def clearResponses() = {
-		responses = new ListBuffer[List[Byte]]()
 	}
 }
