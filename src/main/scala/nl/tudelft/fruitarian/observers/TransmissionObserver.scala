@@ -116,7 +116,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
       // Decrease the backoff by one until 0.
       backoff = math.max(0, backoff - 1)
 
-    case TransmitMessage(_, _, message) =>
+    case TransmitMessage(_, _, message) => this.synchronized {
       DCnet.appendResponse(message)
       if (DCnet.canDecrypt) {
         // Complete the messageRound promise to avoid the timeout call.
@@ -130,10 +130,11 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         // going with this node as centre node. A delay of 5000 is set between
         // rounds for testing purposes.
         Future {
-          Thread.sleep(5000)
+          Thread.sleep(2 * MESSAGE_ROUND_TIMEOUT)
           startMessageRound()
         }
       }
+    }
 
     case TextMessage(_, _, msg) if !messageSent.isEmpty =>
       // If we recently sent a message, the next TextMessage received should be
