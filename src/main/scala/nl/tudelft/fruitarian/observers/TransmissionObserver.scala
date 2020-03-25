@@ -99,8 +99,10 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
       if (DCnet.canDecrypt) {
         messageRound complete Try(true)
         val decryptedMessage = DCnet.decryptReceivedMessages()
-        println(s"[S] Round completed, message[${decryptedMessage.length}]: $decryptedMessage")
-
+        networkInfo.cliquePeers.foreach(p => {
+          handler.sendMessage(TextMessage(networkInfo.ownAddress, p.address, decryptedMessage))
+        })
+        handler.sendMessage(TextMessage(networkInfo.ownAddress, networkInfo.ownAddress, decryptedMessage))
         // Since we do not have leader election yet, keep the message rounds
         // going with this node as centre node. A delay of 5000 is set between
         // rounds for testing purposes.
