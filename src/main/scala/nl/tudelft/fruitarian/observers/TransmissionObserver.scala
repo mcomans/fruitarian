@@ -7,6 +7,7 @@ import nl.tudelft.fruitarian.patterns.Observer
 
 import scala.collection.mutable
 import scala.concurrent.{Future, Promise}
+import scala.util.Try
 
 /**
  * This class handles the Transmission message phase. This means that for each
@@ -16,7 +17,7 @@ import scala.concurrent.{Future, Promise}
  */
 class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Observer[FruitarianMessage] {
 
-  var messageRound: Promise[_] = _
+  var messageRound: Promise[Boolean] = _
   val MESSAGE_ROUND_TIMEOUT = 2000;
   val messageQueue = new mutable.Queue[String]()
 
@@ -96,7 +97,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
     case TransmitMessage(_, _, message) =>
       DCnet.responses += message
       if (DCnet.canDecrypt) {
-        messageRound complete (_)
+        messageRound complete Try(true)
         val decryptedMessage = DCnet.decryptReceivedMessages()
         println(s"[S] Round completed, message[${decryptedMessage.length}]: $decryptedMessage")
 
