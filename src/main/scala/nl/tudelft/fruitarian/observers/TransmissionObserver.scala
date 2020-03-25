@@ -73,6 +73,11 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
           // Clear possible remaining responses.
           DCnet.clearResponses()
 
+          // Send a "TIMEOUT" Text message to all peers to let them know the
+          // round failed and trigger the message requeue behaviour if one of
+          // them actually sent a message this round.
+          sendMessageToClique((address: Address) => TextMessage(networkInfo.ownAddress, address, "TIMEOUT"))
+
           startMessageRound()
         }
       }
