@@ -10,6 +10,10 @@ import scala.util.Random
 class EntryObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Observer[FruitarianMessage] {
   override def receiveUpdate(event: FruitarianMessage): Unit = event match {
     case EntryRequest(from, to) =>
+			// TODO: Find a better way to set our own address. This could allow
+			//  malicious entries as we rely on the sender to set the correct header
+			//  field.
+			networkInfo.ownAddress = to
 	    // Generate and send common seed to entry node.
       val seed = DCnet.getSeed
 	    handler.sendMessage(EntryResponse(to, from, (seed.toString, networkInfo.getPeers)))
