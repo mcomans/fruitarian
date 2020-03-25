@@ -1,10 +1,13 @@
 package nl.tudelft.fruitarian.models
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.util.Random
 
 object DCnet {
 	val MESSAGE_SIZE = 280
+
+	var transmitRequestsSent = 0
+	var responses = new ListBuffer[List[Byte]]
 
 	// Get random seed.
 	def getSeed: Int = {
@@ -41,6 +44,31 @@ object DCnet {
 			res += convertToDCMessage(binaryChar, binaryRand)
 		})
 		res.toList
+	}
+
+	/**
+	 * @return whether we have enough messages to decrypt.
+	 */
+	def canDecrypt: Boolean = {
+		transmitRequestsSent > 0 && transmitRequestsSent == responses.length
+	}
+
+	/**
+	 * Decrypt the received messages.
+	 * Empties the received messages array after decryption.
+	 * @return The decrypted message.
+	 * @throws Exception when the amount of transmission requests sent does not
+	 *                   match the amount of messages received.
+	 */
+	def decryptReceivedMessages(): String = {
+		if (!canDecrypt) {
+			throw new Exception("The amount of TransmitRequests sent does not " +
+				"match the amount of responses.")
+		}
+		val msg = decryptMessage(responses.toList)
+		responses = new ListBuffer[List[Byte]]
+		transmitRequestsSent = 0
+		msg
 	}
 
 	// For the center node that wants to reveal the original message.

@@ -23,6 +23,40 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
     messageQueue.enqueue(message)
   }
 
+  /**
+   * Starts a message round. The node calling this function is expected to be
+   * elected the center node.
+   *
+   * The message round asks each node in the clique (including itself) to send
+   * message using the TransmitRequest message. The amount of requests sent is
+   * noted in the DCNet, however this is a soft verification as the protocol
+   * could break if one or more of the nodes have an outdated cliquePeers list.
+   * Resulting in nonsense messages.
+   *
+   * Upon receiving a TransmitRequest all nodes will return a TransmitMessage
+   * with their message or a random value based on the random seeds between
+   * the peers. If exactly one of the nodes sent a message instead of a random
+   * value this message can be decrypted on the centre node without knowing
+   * which node sent it (see DCNet code).
+   */
+  def startMessageRound(): Unit = {
+    assert(networkInfo.center, "Starting message round while not being " +
+      "the center node.")
+    // TODO: Add identifier to each round, such that returned TransmitMessages
+    //        can be verified to be of the correct round.
+    if (networkInfo.center && networkInfo.cliquePeers.length == 3) {
+      // Send a TransmitRequest to all peers.
+      networkInfo.cliquePeers.foreach(p => {
+        handler.sendMessage(TransmitRequest(networkInfo.ownAddress, p.address))
+      })
+      // Also send one to the master node itself.
+      handler.sendMessage(TransmitRequest(networkInfo.ownAddress, networkInfo.ownAddress))
+
+      // Set the amount of requests sent.
+      DCnet.transmitRequestsSent = networkInfo.cliquePeers.length + 1
+    }
+  }
+
   override def receiveUpdate(event: FruitarianMessage): Unit = event match {
     case TransmitRequest(from, to) =>
       if (messageQueue.nonEmpty) {
@@ -37,25 +71,11 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         handler.sendMessage(TransmitMessage(to, from, DCnet.getRandom(networkInfo.cliquePeers.toList)))
       }
 
-    case TransmitMessage(from, to, message) =>
-      networkInfo.responses += message
-      // Todo: replace this when message transfer is implemented.
-      // When the center node has three responses, encrypt a message based on
-      // the peers and decrypt it using the responses.
-      if (networkInfo.responses.length == 3) {
-        var encryptedMessage = DCnet.encryptMessage("Hi there!", networkInfo.cliquePeers.toList)
-        var decryptedMessage = DCnet.decryptMessage((networkInfo.responses += encryptedMessage).toList)
+    case TransmitMessage(_, _, message) =>
+      DCnet.responses += message
+      if (DCnet.canDecrypt) {
+        val decryptedMessage = DCnet.decryptReceivedMessages()
         println("RESPONSE: " + decryptedMessage)
-      }
-
-    case AnnounceMessage(from, to, seed) =>
-      // Todo: replace this when message transfer is implemented.
-      // Center node sends request when 3 other peers have entered the network.
-      // The request asks all nodes to send their random xor values.
-      if (networkInfo.center && networkInfo.cliquePeers.length == 3) {
-        networkInfo.cliquePeers.foreach(p => {
-          handler.sendMessage(TransmitRequest(to, p.address))
-        })
       }
 
     case _ =>
