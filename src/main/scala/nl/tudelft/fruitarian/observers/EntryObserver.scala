@@ -29,5 +29,7 @@ class EntryObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Obser
 	    networkInfo.cliquePeers += Peer(from, Integer.parseInt(entryInfo._1))
     case AnnounceMessage(from, to, seed) =>
 	    networkInfo.cliquePeers += Peer(from, Integer.parseInt(seed))
+
+		case _ =>
   }
 }
