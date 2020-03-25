@@ -25,9 +25,15 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
 
   override def receiveUpdate(event: FruitarianMessage): Unit = event match {
     case TransmitRequest(from, to) =>
-      // Todo: replace this when message transfer is implemented.
-      // Send message back to the center node with random xor value.
-      handler.sendMessage(TransmitMessage(to, from, DCnet.getRandom(networkInfo.cliquePeers.toList)))
+      if (messageQueue.nonEmpty) {
+        // If we have a message to send, send it.
+        // TODO: This 'just-send-it' behaviour can cause collisions, as
+        //  multiple nodes could send a message at the same time.
+        handler.sendMessage(TransmitMessage(to, from, DCnet.encryptMessage(messageQueue.dequeue(), networkInfo.cliquePeers.toList)))
+      } else {
+        // Else send a random message.
+        handler.sendMessage(TransmitMessage(to, from, DCnet.getRandom(networkInfo.cliquePeers.toList)))
+      }
 
     case TransmitMessage(from, to, message) =>
       networkInfo.responses += message
