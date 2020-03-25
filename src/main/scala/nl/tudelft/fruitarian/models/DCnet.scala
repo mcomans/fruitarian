@@ -1,9 +1,15 @@
 package nl.tudelft.fruitarian.models
 
 import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 
 object DCnet {
 	val MESSAGE_SIZE = 280
+
+	// Get random seed.
+	def getSeed: Int = {
+		new Random().nextInt()
+	}
 
 	// For the node that needs to transmit a random message.
 	// It calculates the xor value of the random values of all peers.

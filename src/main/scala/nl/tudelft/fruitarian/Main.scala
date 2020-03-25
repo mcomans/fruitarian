@@ -3,7 +3,7 @@ package nl.tudelft.fruitarian
 import java.net.InetSocketAddress
 
 import nl.tudelft.fruitarian.models.NetworkInfo
-import nl.tudelft.fruitarian.observers.{BasicLogger, EntryObserver, Greeter}
+import nl.tudelft.fruitarian.observers.{BasicLogger, EntryObserver, Greeter, TransmissionObserver}
 import nl.tudelft.fruitarian.p2p.messages.EntryRequest
 import nl.tudelft.fruitarian.p2p.{Address, TCPHandler}
 
@@ -19,6 +19,7 @@ object Main extends App {
   handler.addMessageObserver(BasicLogger)
   handler.addMessageObserver(new Greeter(handler))
   handler.addMessageObserver(new EntryObserver(handler, networkInfo))
+  handler.addMessageObserver(new TransmissionObserver(handler, networkInfo))
 
   if (args.length == 3) {
     val helloWorldMessage = EntryRequest(
