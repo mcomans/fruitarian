@@ -49,5 +49,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
           handler.sendMessage(TransmitRequest(to, p.address))
         })
       }
+
+    case _ =>
   }
 }
