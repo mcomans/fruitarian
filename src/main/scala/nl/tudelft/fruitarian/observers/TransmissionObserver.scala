@@ -56,6 +56,9 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
     // TODO: Add identifier to each round, such that returned TransmitMessages
     //        can be verified to be of the correct round.
     if (networkInfo.center) {
+      // Clear possible remaining responses.
+      DCnet.clearResponses()
+
       // Send a TransmitRequest to all peers and itself (as this node is also part of the clique).
       sendMessageToClique((address: Address) => TransmitRequest(networkInfo.ownAddress, address))
 
@@ -71,9 +74,6 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         if (!messageRound.isCompleted) {
           messageRound failure (_)
           println("[S] Message round timed out, retrying...")
-
-          // Clear possible remaining responses.
-          DCnet.clearResponses()
 
           // Send a "TIMEOUT" Text message to all peers to let them know the
           // round failed and trigger the message requeue behaviour if one of
