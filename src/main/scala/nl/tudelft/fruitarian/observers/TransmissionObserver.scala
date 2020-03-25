@@ -2,7 +2,7 @@ package nl.tudelft.fruitarian.observers
 
 import nl.tudelft.fruitarian.models.{DCnet, NetworkInfo}
 import nl.tudelft.fruitarian.p2p.TCPHandler
-import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, TransmitMessage, TransmitRequest}
+import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, TextMessage, TransmitMessage, TransmitRequest}
 import nl.tudelft.fruitarian.patterns.Observer
 
 import scala.collection.mutable
@@ -20,6 +20,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
   var messageRound: Promise[Boolean] = _
   val MESSAGE_ROUND_TIMEOUT = 2000;
   val messageQueue = new mutable.Queue[String]()
+  var messageSent: String = ""
 
   def queueMessage(message: String): Unit = {
     if (message.length > DCnet.MESSAGE_SIZE) {
@@ -65,6 +66,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
       import scala.concurrent.ExecutionContext.Implicits.global
       messageRound = Promise[Boolean]()
       Future {
+        // TODO: Find a better way to sleep, this is causing the logs to be somewhat delayed.
         Thread.sleep(MESSAGE_ROUND_TIMEOUT)
         if (!messageRound.isCompleted) {
           messageRound failure (_)
@@ -82,13 +84,15 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
 
   override def receiveUpdate(event: FruitarianMessage): Unit = event match {
     case TransmitRequest(from, to) =>
-      if (messageQueue.nonEmpty) {
-        // If we have a message to send, send it.
+      if (messageQueue.nonEmpty && messageSent.isEmpty) {
+        // If we have a message to send and are not waiting for confirmation
+        // of a previous message, send the next message.
         // TODO: This 'just-send-it' behaviour can cause collisions, as
         //  multiple nodes could send a message at the same time. It wil also
         //  produce nonsense messages in case no one sends an actual encrypted
         //  message.
-        handler.sendMessage(TransmitMessage(to, from, DCnet.encryptMessage(messageQueue.dequeue(), networkInfo.cliquePeers.toList)))
+        messageSent = messageQueue.dequeue()
+        handler.sendMessage(TransmitMessage(to, from, DCnet.encryptMessage(messageSent, networkInfo.cliquePeers.toList)))
       } else {
         // Else send a random message.
         handler.sendMessage(TransmitMessage(to, from, DCnet.getRandom(networkInfo.cliquePeers.toList)))
@@ -109,6 +113,18 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         Thread.sleep(5000)
         startMessageRound()
       }
+
+    case TextMessage(_, _, msg) if !messageSent.isEmpty =>
+      // If we recently sent a message, the next TextMessage received should be this message.
+      // If not we need to resend the message.
+      if (msg != messageSent) {
+        // If the message is not as sent, queue the message for sending again.
+        println("[C] Message not sent correctly, enqueued again...")
+        queueMessage(messageSent)
+      }
+      // Unblock the message sending process to allow the next message or a resend.
+      messageSent = ""
+
 
     case _ =>
   }
