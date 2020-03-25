@@ -44,7 +44,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
       "the center node.")
     // TODO: Add identifier to each round, such that returned TransmitMessages
     //        can be verified to be of the correct round.
-    if (networkInfo.center && networkInfo.cliquePeers.length == 3) {
+    if (networkInfo.center) {
       // Send a TransmitRequest to all peers.
       networkInfo.cliquePeers.foreach(p => {
         handler.sendMessage(TransmitRequest(networkInfo.ownAddress, p.address))
@@ -54,6 +54,8 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
 
       // Set the amount of requests sent.
       DCnet.transmitRequestsSent = networkInfo.cliquePeers.length + 1
+
+      println(s"[S] Started Message round for ${DCnet.transmitRequestsSent} node(s).")
     }
   }
 
