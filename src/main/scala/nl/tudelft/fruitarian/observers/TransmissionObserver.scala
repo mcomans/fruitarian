@@ -77,7 +77,13 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
       DCnet.responses += message
       if (DCnet.canDecrypt) {
         val decryptedMessage = DCnet.decryptReceivedMessages()
-        println("RESPONSE: " + decryptedMessage)
+        println(s"[S] Round completed, message[${decryptedMessage.length}]: $decryptedMessage")
+
+        // Since we do not have leader election yet, keep the message rounds
+        // going with this node as centre node. A delay of 5000 is set between
+        // rounds for testing purposes.
+        Thread.sleep(5000)
+        startMessageRound()
       }
 
     case _ =>
