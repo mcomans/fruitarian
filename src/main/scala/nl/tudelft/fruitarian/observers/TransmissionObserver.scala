@@ -1,7 +1,7 @@
 package nl.tudelft.fruitarian.observers
 
 import nl.tudelft.fruitarian.models.{DCnet, NetworkInfo}
-import nl.tudelft.fruitarian.p2p.TCPHandler
+import nl.tudelft.fruitarian.p2p.{Address, TCPHandler}
 import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, TextMessage, TransmitMessage, TransmitRequest}
 import nl.tudelft.fruitarian.patterns.Observer
 
@@ -53,12 +53,8 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
     // TODO: Add identifier to each round, such that returned TransmitMessages
     //        can be verified to be of the correct round.
     if (networkInfo.center) {
-      // Send a TransmitRequest to all peers.
-      networkInfo.cliquePeers.foreach(p => {
-        handler.sendMessage(TransmitRequest(networkInfo.ownAddress, p.address))
-      })
-      // Also send one to the master node itself.
-      handler.sendMessage(TransmitRequest(networkInfo.ownAddress, networkInfo.ownAddress))
+      // Send a TransmitRequest to all peers and itself (as this node is also part of the clique).
+      sendMessageToClique((address: Address) => TransmitRequest(networkInfo.ownAddress, address))
 
       // Set the amount of requests sent.
       DCnet.transmitRequestsSent = networkInfo.cliquePeers.length + 1
@@ -81,6 +77,14 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         }
       }
     }
+  }
+
+  /**
+   * Helper function to send a message to all clique peers and itself.
+   */
+  def sendMessageToClique(msg: (Address) => FruitarianMessage): Unit = {
+    networkInfo.cliquePeers.foreach(p => handler.sendMessage(msg(p.address)))
+    handler.sendMessage(msg(networkInfo.ownAddress))
   }
 
 
@@ -106,12 +110,13 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
     case TransmitMessage(_, _, message) =>
       DCnet.responses += message
       if (DCnet.canDecrypt) {
+        // Complete the messageRound promise to avoid the timeout call.
         messageRound complete Try(true)
+
+        // Send the decrypted message to the clique.
         val decryptedMessage = DCnet.decryptReceivedMessages()
-        networkInfo.cliquePeers.foreach(p => {
-          handler.sendMessage(TextMessage(networkInfo.ownAddress, p.address, decryptedMessage))
-        })
-        handler.sendMessage(TextMessage(networkInfo.ownAddress, networkInfo.ownAddress, decryptedMessage))
+        sendMessageToClique((address: Address) => TextMessage(networkInfo.ownAddress, address, decryptedMessage))
+
         // Since we do not have leader election yet, keep the message rounds
         // going with this node as centre node. A delay of 5000 is set between
         // rounds for testing purposes.
