@@ -1,12 +1,14 @@
 package nl.tudelft.fruitarian.observers
 
+import java.util.concurrent.Executors
+
 import nl.tudelft.fruitarian.models.{DCnet, NetworkInfo}
 import nl.tudelft.fruitarian.p2p.{Address, TCPHandler}
 import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, TextMessage, TransmitMessage, TransmitRequest}
 import nl.tudelft.fruitarian.patterns.Observer
 
 import scala.collection.mutable
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future, Promise}
 import scala.util.{Random, Try}
 
 /**
@@ -16,7 +18,8 @@ import scala.util.{Random, Try}
  * a message has been queued.
  */
 class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Observer[FruitarianMessage] {
-
+  protected implicit val context: ExecutionContextExecutorService =
+    ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
   var messageRound: Promise[Boolean] = _
   val MESSAGE_ROUND_TIMEOUT = 2000
   val BACKOFF_RANGE = 10
@@ -61,10 +64,9 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
 
       println(s"[S] Started Message round for ${DCnet.transmitRequestsSent} node(s).")
 
-      import scala.concurrent.ExecutionContext.Implicits.global
       messageRound = Promise[Boolean]()
       Future {
-        // TODO: Find a better way to sleep, this is causing the logs to be somewhat delayed.
+        // TODO: Find a better way to sleep, this seems to cause the logs to be somewhat delayed.
         Thread.sleep(MESSAGE_ROUND_TIMEOUT)
         if (!messageRound.isCompleted) {
           messageRound failure (_)
@@ -78,6 +80,8 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
           // them actually sent a message this round.
           sendMessageToClique((address: Address) => TextMessage(networkInfo.ownAddress, address, "TIMEOUT"))
 
+          // Give some additional time, and retry.
+          Thread.sleep(MESSAGE_ROUND_TIMEOUT)
           startMessageRound()
         }
       }
@@ -125,8 +129,10 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         // Since we do not have leader election yet, keep the message rounds
         // going with this node as centre node. A delay of 5000 is set between
         // rounds for testing purposes.
-        Thread.sleep(5000)
-        startMessageRound()
+        Future {
+          Thread.sleep(5000)
+          startMessageRound()
+        }
       }
 
     case TextMessage(_, _, msg) if !messageSent.isEmpty =>
