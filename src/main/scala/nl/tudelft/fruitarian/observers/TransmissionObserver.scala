@@ -2,10 +2,11 @@ package nl.tudelft.fruitarian.observers
 
 import nl.tudelft.fruitarian.models.{DCnet, NetworkInfo}
 import nl.tudelft.fruitarian.p2p.TCPHandler
-import nl.tudelft.fruitarian.p2p.messages.{AnnounceMessage, FruitarianMessage, TransmitMessage, TransmitRequest}
+import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, TransmitMessage, TransmitRequest}
 import nl.tudelft.fruitarian.patterns.Observer
 
 import scala.collection.mutable
+import scala.concurrent.{Future, Promise}
 
 /**
  * This class handles the Transmission message phase. This means that for each
@@ -14,6 +15,9 @@ import scala.collection.mutable
  * a message has been queued.
  */
 class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Observer[FruitarianMessage] {
+
+  var messageRound: Promise[_] = _
+  val MESSAGE_ROUND_TIMEOUT = 2000;
   val messageQueue = new mutable.Queue[String]()
 
   def queueMessage(message: String): Unit = {
@@ -56,8 +60,20 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
       DCnet.transmitRequestsSent = networkInfo.cliquePeers.length + 1
 
       println(s"[S] Started Message round for ${DCnet.transmitRequestsSent} node(s).")
+
+      import scala.concurrent.ExecutionContext.Implicits.global
+      messageRound = Promise[Boolean]()
+      Future {
+        Thread.sleep(MESSAGE_ROUND_TIMEOUT)
+        if (!messageRound.isCompleted) {
+          messageRound failure (_)
+          println("[S] Message round timed out, retrying...")
+          startMessageRound()
+        }
+      }
     }
   }
+
 
   override def receiveUpdate(event: FruitarianMessage): Unit = event match {
     case TransmitRequest(from, to) =>
@@ -67,15 +83,16 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         //  multiple nodes could send a message at the same time. It wil also
         //  produce nonsense messages in case no one sends an actual encrypted
         //  message.
-        handler.sendMessage(TransmitMessage(to, from, DCnet.encryptMessage(messageQueue.dequeue(), networkInfo.cliquePeers.toList)))
+        //handler.sendMessage(TransmitMessage(to, from, DCnet.encryptMessage(messageQueue.dequeue(), networkInfo.cliquePeers.toList)))
       } else {
         // Else send a random message.
-        handler.sendMessage(TransmitMessage(to, from, DCnet.getRandom(networkInfo.cliquePeers.toList)))
+        //handler.sendMessage(TransmitMessage(to, from, DCnet.getRandom(networkInfo.cliquePeers.toList)))
       }
 
     case TransmitMessage(_, _, message) =>
       DCnet.responses += message
       if (DCnet.canDecrypt) {
+        messageRound complete (_)
         val decryptedMessage = DCnet.decryptReceivedMessages()
         println(s"[S] Round completed, message[${decryptedMessage.length}]: $decryptedMessage")
 
