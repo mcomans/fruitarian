@@ -23,7 +23,9 @@ object MessageSerializer {
         case header @ MessageHeader(TextMessage.MessageType, _, _) => TextMessage.fromHeaderAndBody(header, body)
         case header @ MessageHeader(EntryResponse.MessageType, _, _) => EntryResponse.fromHeaderAndBody(header, body)
         case MessageHeader(EntryRequest.MessageType, from, to) => EntryRequest(from, to)
-        case MessageHeader(AnnounceMessage.MessageType, from, to) => AnnounceMessage(from, to)
+        case MessageHeader(TransmitRequest.MessageType, from, to) => TransmitRequest(from, to)
+        case header @ MessageHeader(AnnounceMessage.MessageType, _, _) => AnnounceMessage.fromHeaderAndBody(header, body)
+        case header @ MessageHeader(TransmitMessage.MessageType, _, _) => TransmitMessage.fromHeaderAndBody(header, body)
       }
     }
   }
