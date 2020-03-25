@@ -87,10 +87,10 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         //  multiple nodes could send a message at the same time. It wil also
         //  produce nonsense messages in case no one sends an actual encrypted
         //  message.
-        //handler.sendMessage(TransmitMessage(to, from, DCnet.encryptMessage(messageQueue.dequeue(), networkInfo.cliquePeers.toList)))
+        handler.sendMessage(TransmitMessage(to, from, DCnet.encryptMessage(messageQueue.dequeue(), networkInfo.cliquePeers.toList)))
       } else {
         // Else send a random message.
-        //handler.sendMessage(TransmitMessage(to, from, DCnet.getRandom(networkInfo.cliquePeers.toList)))
+        handler.sendMessage(TransmitMessage(to, from, DCnet.getRandom(networkInfo.cliquePeers.toList)))
       }
 
     case TransmitMessage(_, _, message) =>
