@@ -54,8 +54,6 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
   def startMessageRound(): Unit = {
     assert(networkInfo.center, "Starting message round while not being " +
       "the center node.")
-    // TODO: Add identifier to each round, such that returned TransmitMessages
-    //        can be verified to be of the correct round.
     if (networkInfo.center) {
       // Clear possible remaining responses.
       DCnet.clearResponses()
