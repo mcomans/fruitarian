@@ -21,11 +21,12 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
   protected implicit val context: ExecutionContextExecutorService =
     ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
   var messageRound: Promise[Boolean] = _
-  val MESSAGE_ROUND_TIMEOUT = 2000
+  val MESSAGE_ROUND_TIMEOUT = 250
   val BACKOFF_RANGE = 10
   val messageQueue = new mutable.Queue[String]()
   var messageSent: String = ""
   var backoff = 0
+  var roundId = 0
 
   def queueMessage(message: String): Unit = {
     if (message.length > DCnet.MESSAGE_SIZE) {
@@ -61,7 +62,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
       messageRound = Promise[Boolean]()
 
       // Send a TransmitRequest to all peers and itself (as this node is also part of the clique).
-      sendMessageToClique((address: Address) => TransmitRequest(networkInfo.ownAddress, address))
+      sendMessageToClique((address: Address) => TransmitRequest(networkInfo.ownAddress, address, roundId))
 
       // Set the amount of requests sent.
       DCnet.transmitRequestsSent = networkInfo.cliquePeers.length + 1
@@ -73,6 +74,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         Thread.sleep(MESSAGE_ROUND_TIMEOUT)
         if (!messageRound.isCompleted) {
           messageRound failure (_)
+          roundId += 1
           println("[S] Message round timed out, retrying...")
 
           // Send a "TIMEOUT" Text message to all peers to let them know the
@@ -98,8 +100,10 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
 
 
   override def receiveUpdate(event: FruitarianMessage): Unit = event match {
-    case TransmitRequest(from, to) =>
-      if (messageQueue.nonEmpty && messageSent.isEmpty && backoff == 0) {
+    case TransmitRequest(from, to, reqRoundId) =>
+      // Set the roundId to the highest value, as our random generators can only generate extra values.
+      roundId = math.max(roundId, reqRoundId)
+      if (messageQueue.nonEmpty && messageSent.isEmpty && backoff == 0 && roundId == reqRoundId) {
         // If we have a message to send and are not waiting for confirmation
         // of a previous message, send the next message. If we failed to send
         // a message and have a backoff we have to wait this cycle.
@@ -109,19 +113,23 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         //  message.
         messageSent = messageQueue.dequeue()
         println(s"[C] Sent my message: '$messageSent'")
-        handler.sendMessage(TransmitMessage(to, from, DCnet.encryptMessage(messageSent, networkInfo.cliquePeers.toList)))
+        handler.sendMessage(TransmitMessage(to, from, (roundId, DCnet.encryptMessage(messageSent, networkInfo.cliquePeers.toList, roundId))))
       } else {
         // Else send a random message.
-        handler.sendMessage(TransmitMessage(to, from, DCnet.getRandom(networkInfo.cliquePeers.toList)))
+        handler.sendMessage(TransmitMessage(to, from, (roundId, DCnet.getRandom(networkInfo.cliquePeers.toList, roundId))))
       }
       // Decrease the backoff by one until 0.
       backoff = math.max(0, backoff - 1)
 
     case TransmitMessage(_, _, message) => this.synchronized {
-      DCnet.appendResponse(message)
+      if (message._1 == roundId) {
+        // Only add the message if it matches the round id.
+        DCnet.appendResponse(message._2)
+      }
       if (DCnet.canDecrypt) {
         // Complete the messageRound promise to avoid the timeout call.
         messageRound complete Try(true)
+        roundId += 1
 
         // Send the decrypted message to the clique.
         val decryptedMessage = DCnet.decryptReceivedMessages()

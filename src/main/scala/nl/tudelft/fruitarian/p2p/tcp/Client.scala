@@ -10,7 +10,7 @@ import nl.tudelft.fruitarian.p2p.messages.FruitarianMessage
 import nl.tudelft.fruitarian.p2p.{Address, MessageSerializer, SendMsg}
 
 object Client {
-  def messageToWrite(msg: FruitarianMessage) = Write(ByteString(MessageSerializer.serializeMsg(msg)))
+  def messageToWrite(msg: FruitarianMessage) = Write(ByteString.fromString(MessageSerializer.serializeMsg(msg)))
 
   def props(remote: InetSocketAddress, callback: FruitarianMessage => Unit) =
     Props(classOf[Client], remote, callback);
@@ -59,7 +59,7 @@ class Client(remote: InetSocketAddress, callback: FruitarianMessage => Unit) ext
 
         // When data received, send it to the listener.
         case Received(data: ByteString) =>
-          val msg: FruitarianMessage = MessageSerializer.deserialize(data.utf8String)
+          val msg: FruitarianMessage = MessageSerializer.deserialize(data.decodeString("utf-8"))
           // Set the msg header from field to the actual receiver value.
           msg.header.from = Address(remote)
           callback(msg)

@@ -32,11 +32,11 @@ object DCnet {
 
 	// For the node that needs to transmit a random message.
 	// It calculates the xor value of the random values of all peers.
-	def getRandom(peers: List[Peer]): List[Byte] = {
+	def getRandom(peers: List[Peer], roundId: Int): List[Byte] = {
 		var res = Array.fill[Byte](MESSAGE_SIZE)(0)
 		peers.foreach(p => {
 			// Get random bytes depending on the size of the message.
-			val randomBytes = p.getRandomByteArray(MESSAGE_SIZE)
+			val randomBytes = p.getRandomBytesForRound(MESSAGE_SIZE, roundId)
 			// Calculate xor value.
 			res = res.zipWithIndex.map(b => {
 				val bytes = randomBytes(b._2)
@@ -49,9 +49,9 @@ object DCnet {
 	// For the node that wants to transmit a message.
 	// Encrypt message using the random values from the peers
 	// based on the the DC-net method.
-	def encryptMessage(message: String, peers: List[Peer]): List[Byte] = {
+	def encryptMessage(message: String, peers: List[Peer], roundId: Int): List[Byte] = {
 		// Get xor value of the random values of all peers.
-		val rand = getRandom(peers)
+		val rand = getRandom(peers, roundId)
 		var res = new ArrayBuffer[Byte]
 		// Convert each char of the message to a dc-net message.
 		formatMessageSize(message).zipWithIndex.foreach(c => {
