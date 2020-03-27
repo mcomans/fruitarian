@@ -2,7 +2,7 @@ package nl.tudelft.fruitarian.p2p.messages
 
 import nl.tudelft.fruitarian.p2p.Address
 
-case class ResultMessage(from: Address, to: Address, message: String) extends FruitarianMessage(MessageHeader(TextMessage.MessageType, from, to)) {
+case class ResultMessage(from: Address, to: Address, message: String) extends FruitarianMessage(MessageHeader(ResultMessage.MessageType, from, to)) {
   override def serializeBody(): String = message
 }
 

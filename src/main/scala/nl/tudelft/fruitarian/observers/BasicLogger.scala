@@ -1,6 +1,6 @@
 package nl.tudelft.fruitarian.observers
 
-import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, NextRoundMessage, TextMessage, TransmitMessage, TransmitRequest}
+import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, NextRoundMessage, ResultMessage, TextMessage, TransmitMessage, TransmitRequest}
 import nl.tudelft.fruitarian.patterns.Observer
 
 /* Example Observer that logs all incoming messages. */
@@ -12,7 +12,11 @@ object BasicLogger extends Observer[FruitarianMessage] {
 
   def receiveUpdate(event: FruitarianMessage): Unit = event match {
     case TextMessage(from, _, message) => stripZeroBytes(message) match {
-      case s if s.length > 0 => println(s"[${from.socket}][TEXT]: $message")
+      case s if s.nonEmpty => println(s"[${from.socket}][TEXT]: $message")
+      case _ =>
+    }
+    case ResultMessage(from, _, message) => stripZeroBytes(message) match {
+      case s if s.nonEmpty => println(s"[${from.socket}][RESULT]: $message -- " + message(0))
       case _ =>
     }
     case TransmitRequest(from, _, roundId) => println(s"[${from.socket}][R$roundId][MESSAGE_REQUEST]")
