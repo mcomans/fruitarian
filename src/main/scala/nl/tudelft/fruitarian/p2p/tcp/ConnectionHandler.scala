@@ -30,7 +30,7 @@ class ConnectionHandler(connection: ActorRef, remote: InetSocketAddress, callbac
 
     // Send any other event to the listener.
     case Received(data) =>
-      val msg = MessageSerializer.deserialize(data.utf8String)
+      val msg = MessageSerializer.deserialize(data.decodeString("utf-8"))
       msg.header.from = Address(remote)
       callback(msg)
   }

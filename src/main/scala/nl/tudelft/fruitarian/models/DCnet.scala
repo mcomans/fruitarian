@@ -1,17 +1,42 @@
 package nl.tudelft.fruitarian.models
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.util.Random
 
 object DCnet {
 	val MESSAGE_SIZE = 280
 
+	var transmitRequestsSent = 0
+
+	// All interactions with this array should be synchronised using the
+	// functions defined below. Even in this class. This avoids different threads
+	// reading or writing to different versions.
+	private var responses = new ListBuffer[List[Byte]]
+
+	def appendResponse(response: List[Byte]): Unit = this.synchronized {
+		responses += response
+	}
+
+	def retrieveResponses: ListBuffer[List[Byte]] = this.synchronized {
+		responses
+	}
+
+	def clearResponses(): Unit = this.synchronized {
+		responses = new ListBuffer[List[Byte]]()
+	}
+
+	// Get random seed.
+	def getSeed: Int = {
+		new Random().nextInt()
+	}
+
 	// For the node that needs to transmit a random message.
 	// It calculates the xor value of the random values of all peers.
-	def getRandom(peers: List[Peer]): List[Byte] = {
+	def getRandom(peers: List[Peer], roundId: Int): List[Byte] = {
 		var res = Array.fill[Byte](MESSAGE_SIZE)(0)
 		peers.foreach(p => {
 			// Get random bytes depending on the size of the message.
-			val randomBytes = p.getRandomByteArray(MESSAGE_SIZE)
+			val randomBytes = p.getRandomBytesForRound(MESSAGE_SIZE, roundId)
 			// Calculate xor value.
 			res = res.zipWithIndex.map(b => {
 				val bytes = randomBytes(b._2)
@@ -24,9 +49,9 @@ object DCnet {
 	// For the node that wants to transmit a message.
 	// Encrypt message using the random values from the peers
 	// based on the the DC-net method.
-	def encryptMessage(message: String, peers: List[Peer]): List[Byte] = {
+	def encryptMessage(message: String, peers: List[Peer], roundId: Int): List[Byte] = {
 		// Get xor value of the random values of all peers.
-		val rand = getRandom(peers)
+		val rand = getRandom(peers, roundId)
 		var res = new ArrayBuffer[Byte]
 		// Convert each char of the message to a dc-net message.
 		formatMessageSize(message).zipWithIndex.foreach(c => {
@@ -35,6 +60,31 @@ object DCnet {
 			res += convertToDCMessage(binaryChar, binaryRand)
 		})
 		res.toList
+	}
+
+	/**
+	 * @return whether we have enough messages to decrypt.
+	 */
+	def canDecrypt: Boolean = this.synchronized {
+		transmitRequestsSent > 0 && transmitRequestsSent == retrieveResponses.length
+	}
+
+	/**
+	 * Decrypt the received messages.
+	 * Empties the received messages array after decryption.
+	 * @return The decrypted message.
+	 * @throws Exception when the amount of transmission requests sent does not
+	 *                   match the amount of messages received.
+	 */
+	def decryptReceivedMessages(): String = {
+		if (!canDecrypt) {
+			throw new Exception("The amount of TransmitRequests sent does not " +
+				"match the amount of responses.")
+		}
+		val msg = decryptMessage(retrieveResponses.toList)
+		clearResponses()
+		transmitRequestsSent = 0
+		msg
 	}
 
 	// For the center node that wants to reveal the original message.
