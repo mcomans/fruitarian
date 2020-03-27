@@ -23,12 +23,12 @@ class EntryObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Obser
 	    entryInfo.peerList.foreach({ case (id, address) =>
 		    val seed = DCnet.getSeed
 		    networkInfo.cliquePeers += Peer(address, seed, id)
-		    handler.sendMessage(AnnounceMessage(to, address, seed.toString, networkInfo.nodeId))
+		    handler.sendMessage(AnnounceMessage(to, address, AnnounceMessageBody(seed.toString, networkInfo.nodeId)))
 	    })
 	    // Add peer with common seed value.
 	    networkInfo.cliquePeers += Peer(from, Integer.parseInt(entryInfo.seed), entryInfo.id)
-    case AnnounceMessage(from, _, seed, id) =>
-	    networkInfo.cliquePeers += Peer(from, Integer.parseInt(seed), id)
+    case AnnounceMessage(from, _, body) =>
+	    networkInfo.cliquePeers += Peer(from, Integer.parseInt(body.seed), body.id)
 
 		case _ =>
   }
