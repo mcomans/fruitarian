@@ -4,7 +4,7 @@ import nl.tudelft.fruitarian.p2p.Address
 
 import scala.util.Random
 
-case class Peer(address: Address, seed: Int) {
+case class Peer(address: Address, seed: Int, id: String) {
 	val r = new Random(seed)
 	var roundId = 0
 

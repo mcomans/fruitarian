@@ -9,26 +9,26 @@ import scala.util.Random
 
 class EntryObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Observer[FruitarianMessage] {
   override def receiveUpdate(event: FruitarianMessage): Unit = event match {
-    case EntryRequest(from, to) =>
+    case EntryRequest(from, to, id) =>
 			// TODO: Find a better way to set our own address. This could allow
 			//  malicious entries as we rely on the sender to set the correct header
 			//  field.
 			networkInfo.ownAddress = to
 	    // Generate and send common seed to entry node.
       val seed = DCnet.getSeed
-	    handler.sendMessage(EntryResponse(to, from, (seed.toString, networkInfo.getPeers)))
-	    networkInfo.cliquePeers += Peer(from, seed)
+	    handler.sendMessage(EntryResponse(to, from, EntryResponseBody(seed.toString, networkInfo.getPeers, networkInfo.nodeId)))
+	    networkInfo.cliquePeers += Peer(from, seed, id)
     case EntryResponse(from, to, entryInfo) =>
 	    // Generate and send seeds to all peers.
-	    entryInfo._2.foreach(p => {
+	    entryInfo.peerList.foreach({ case (id, address) =>
 		    val seed = DCnet.getSeed
-		    networkInfo.cliquePeers += Peer(p, seed)
-		    handler.sendMessage(AnnounceMessage(to, p, seed.toString))
+		    networkInfo.cliquePeers += Peer(address, seed, id)
+		    handler.sendMessage(AnnounceMessage(to, address, AnnounceMessageBody(seed.toString, networkInfo.nodeId)))
 	    })
 	    // Add peer with common seed value.
-	    networkInfo.cliquePeers += Peer(from, Integer.parseInt(entryInfo._1))
-    case AnnounceMessage(from, to, seed) =>
-	    networkInfo.cliquePeers += Peer(from, Integer.parseInt(seed))
+	    networkInfo.cliquePeers += Peer(from, Integer.parseInt(entryInfo.seed), entryInfo.id)
+    case AnnounceMessage(from, _, body) =>
+	    networkInfo.cliquePeers += Peer(from, Integer.parseInt(body.seed), body.id)
 
 		case _ =>
   }

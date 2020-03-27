@@ -4,7 +4,7 @@ import java.util.concurrent.Executors
 
 import nl.tudelft.fruitarian.models.{DCnet, NetworkInfo}
 import nl.tudelft.fruitarian.p2p.{Address, TCPHandler}
-import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, TextMessage, TransmitMessage, TransmitRequest}
+import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, NextRoundMessage, ResultMessage, TextMessage, TransmitMessage, TransmitRequest}
 import nl.tudelft.fruitarian.patterns.Observer
 
 import scala.collection.mutable
@@ -36,8 +36,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
   }
 
   /**
-   * Starts a message round. The node calling this function is expected to be
-   * elected the center node.
+   * Starts a message round if the current node is the center node.
    *
    * The message round asks each node in the clique (including itself) to send
    * message using the TransmitRequest message. The amount of requests sent is
@@ -52,40 +51,37 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
    * which node sent it (see DCNet code).
    */
   def startMessageRound(): Unit = {
-    assert(networkInfo.center, "Starting message round while not being " +
-      "the center node.")
-    if (networkInfo.center) {
-      // Clear possible remaining responses.
-      DCnet.clearResponses()
-      messageRound = Promise[Boolean]()
+    // Clear possible remaining responses.
+    DCnet.clearResponses()
+    messageRound = Promise[Boolean]()
 
-      // Send a TransmitRequest to all peers and itself (as this node is also part of the clique).
-      sendMessageToClique((address: Address) => TransmitRequest(networkInfo.ownAddress, address, roundId))
+    // Send a TransmitRequest to all peers and itself (as this node is also part of the clique).
+    sendMessageToClique((address: Address) => TransmitRequest(networkInfo.ownAddress, address, roundId))
 
-      // Set the amount of requests sent.
-      DCnet.transmitRequestsSent = networkInfo.cliquePeers.length + 1
+    // Set the amount of requests sent.
+    DCnet.transmitRequestsSent = networkInfo.cliquePeers.length + 1
 
-      println(s"[S] Started Message round for ${DCnet.transmitRequestsSent} node(s).")
+    println(s"[S] [${networkInfo.nodeId}] Started Message round for ${DCnet.transmitRequestsSent} node(s).")
 
-      Future {
-        // TODO: Find a better way to sleep, this seems to cause the logs to be somewhat delayed.
+    Future {
+      // TODO: Find a better way to sleep, this seems to cause the logs to be somewhat delayed.
+      Thread.sleep(MESSAGE_ROUND_TIMEOUT)
+      if (!messageRound.isCompleted) {
+        messageRound failure (_)
+        roundId += 1
+        println("[S] Message round timed out, retrying...")
+
+        // Send a "TIMEOUT" Text message to all peers to let them know the
+        // round failed and trigger the message requeue behaviour if one of
+        // them actually sent a message this round.
+        sendMessageToClique((address: Address) => ResultMessage(networkInfo.ownAddress, address, "TIMEOUT"))
+
+        // Give some additional time, and retry.
         Thread.sleep(MESSAGE_ROUND_TIMEOUT)
-        if (!messageRound.isCompleted) {
-          messageRound failure (_)
-          roundId += 1
-          println("[S] Message round timed out, retrying...")
-
-          // Send a "TIMEOUT" Text message to all peers to let them know the
-          // round failed and trigger the message requeue behaviour if one of
-          // them actually sent a message this round.
-          sendMessageToClique((address: Address) => TextMessage(networkInfo.ownAddress, address, "TIMEOUT"))
-
-          // Give some additional time, and retry.
-          Thread.sleep(MESSAGE_ROUND_TIMEOUT)
-          startMessageRound()
-        }
+        startNextRound(roundId)
       }
     }
+
   }
 
   /**
@@ -94,6 +90,14 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
   def sendMessageToClique(msg: (Address) => FruitarianMessage): Unit = {
     networkInfo.cliquePeers.foreach(p => handler.sendMessage(msg(p.address)))
     handler.sendMessage(msg(networkInfo.ownAddress))
+  }
+
+  def startNextRound(roundId: Int): Unit = {
+    val nextCenter = networkInfo.getNextPeer
+    nextCenter match {
+      case Some(p) => handler.sendMessage(NextRoundMessage(networkInfo.ownAddress, p.address, roundId))
+      case None => startMessageRound()
+    }
   }
 
 
@@ -131,19 +135,18 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
 
         // Send the decrypted message to the clique.
         val decryptedMessage = DCnet.decryptReceivedMessages()
-        sendMessageToClique((address: Address) => TextMessage(networkInfo.ownAddress, address, decryptedMessage))
+        sendMessageToClique((address: Address) => ResultMessage(networkInfo.ownAddress, address, decryptedMessage))
 
-        // Since we do not have leader election yet, keep the message rounds
-        // going with this node as centre node. A delay of 5000 is set between
-        // rounds for testing purposes.
+        // The next round is initiated by sending a message to the new center node.
+        // A delay of 500 is set between rounds for testing purposes.
         Future {
           Thread.sleep(2 * MESSAGE_ROUND_TIMEOUT)
-          startMessageRound()
+          startNextRound(roundId)
         }
       }
     }
 
-    case TextMessage(_, _, msg) if !messageSent.isEmpty =>
+    case ResultMessage(_, _, msg) if !messageSent.isEmpty =>
       // If we recently sent a message, the next TextMessage received should be
       // this message. If not we need to resend the message.
       if (msg != messageSent) {
@@ -157,7 +160,9 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
       // Unblock the message sending process to allow the next message or a resend.
       messageSent = ""
 
-
+    case NextRoundMessage(_, _, r) =>
+      roundId = r
+      startMessageRound()
     case _ =>
   }
 }
