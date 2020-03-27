@@ -15,6 +15,11 @@ case class Peer(address: Address, seed: Int, id: String) {
 	 * the random number generator at the other clients for this peer, which are
 	 * based on the same seed.
 	 *
+	 * In case the amount of calls to the random generator is too high or low
+	 * the method call the random generator to compensate or return a list of
+	 * zeros (which will make the round fail) as we cannot go back in random
+	 * number time, to make sure the node returns to a synchronised state.
+	 *
 	 * This method is synchronised as it adjusts the roundId and uses the random
 	 * generator. In a high load situation different threads could use this
 	 * function and potentially unsynchronise the roundId and the amount of times
@@ -33,9 +38,12 @@ case class Peer(address: Address, seed: Int, id: String) {
 			getRandomByteArray(size)
 			roundId += 1
 		}
-		val bytes = getRandomByteArray(size)
-		roundId += 1
-		bytes
+		if (roundId == round) {
+			val bytes = getRandomByteArray(size)
+			roundId += 1
+			return bytes
+		}
+		List.fill[Byte](size){0}
 	}
 
 	// Get a list of random bytes with a specific size.

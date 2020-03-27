@@ -21,7 +21,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
   protected implicit val context: ExecutionContextExecutorService =
     ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
   var messageRound: Promise[Boolean] = _
-  val MESSAGE_ROUND_TIMEOUT = 250
+  val MESSAGE_ROUND_TIMEOUT = 5000
   val BACKOFF_RANGE = 10
   val messageQueue = new mutable.Queue[String]()
   var messageSent: String = ""
@@ -140,7 +140,6 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         // The next round is initiated by sending a message to the new center node.
         // A delay of 500 is set between rounds for testing purposes.
         Future {
-          Thread.sleep(2 * MESSAGE_ROUND_TIMEOUT)
           startNextRound(roundId)
         }
       }
