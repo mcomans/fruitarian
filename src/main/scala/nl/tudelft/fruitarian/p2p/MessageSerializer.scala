@@ -22,10 +22,12 @@ object MessageSerializer {
       case JObject(("header", h) :: ("body", JString(body)) :: Nil) => h.extract[MessageHeader] match {
         case header @ MessageHeader(TextMessage.MessageType, _, _) => TextMessage.fromHeaderAndBody(header, body)
         case header @ MessageHeader(EntryResponse.MessageType, _, _) => EntryResponse.fromHeaderAndBody(header, body)
-        case MessageHeader(EntryRequest.MessageType, from, to) => EntryRequest(from, to)
+        case header @ MessageHeader(EntryRequest.MessageType, _, _) => EntryRequest.fromHeaderAndBody(header, body)
         case header @ MessageHeader(TransmitRequest.MessageType, _, _) => TransmitRequest.fromHeaderAndBody(header, body)
         case header @ MessageHeader(AnnounceMessage.MessageType, _, _) => AnnounceMessage.fromHeaderAndBody(header, body)
         case header @ MessageHeader(TransmitMessage.MessageType, _, _) => TransmitMessage.fromHeaderAndBody(header, body)
+        case header @ MessageHeader(ResultMessage.MessageType, _, _) => ResultMessage.fromHeaderAndBody(header, body)
+        case header @ MessageHeader(NextRoundMessage.MessageType, _, _) => NextRoundMessage.fromHeaderAndBody(header, body)
       }
     }
   }
