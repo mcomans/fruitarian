@@ -152,8 +152,9 @@ def main():
         elif new_network:
             add_node(i, host, args.port + i, args.port + i - 1)
         # Else, add nodes that join other host and known port
+        # Starts numbering ports one up from known port number
         else:
-            add_node(i, host, args.port + i, args.port)
+            add_node(i, host, args.port + 1 + i, args.port)
         # Make sure the nodes have some time to start
         time.sleep(1)
 
