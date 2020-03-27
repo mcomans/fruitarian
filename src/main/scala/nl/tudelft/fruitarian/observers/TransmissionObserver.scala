@@ -137,9 +137,8 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         val decryptedMessage = DCnet.decryptReceivedMessages()
         sendMessageToClique((address: Address) => ResultMessage(networkInfo.ownAddress, address, decryptedMessage))
 
-        // Since we do not have leader election yet, keep the message rounds
-        // going with this node as centre node. A delay of 5000 is set between
-        // rounds for testing purposes.
+        // The next round is initiated by sending a message to the new center node.
+        // A delay of 500 is set between rounds for testing purposes.
         Future {
           Thread.sleep(2 * MESSAGE_ROUND_TIMEOUT)
           startNextRound(roundId)
