@@ -14,14 +14,12 @@ class NetworkInfo() {
     cliquePeers.map(p => (p.id, p.address)).toList
   }
 
-  def getNextPeer: Peer = {
+  def getNextPeer: Option[Peer] = {
     val sorted = cliquePeers.toList.sortBy(_.id)
     val bigger = sorted.filter(p => p.id > nodeId)
     if (bigger.nonEmpty) {
-      bigger.head
-    } else {
-      sorted.head
-    }
+      Some(bigger.head)
+    } else sorted.headOption
   }
 
 }

@@ -78,9 +78,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
 
         // Give some additional time, and retry.
         Thread.sleep(MESSAGE_ROUND_TIMEOUT)
-
-        val nextCenter = networkInfo.getNextPeer
-        handler.sendMessage(NextRoundMessage(networkInfo.ownAddress, nextCenter.address, roundId))
+        startNextRound(roundId)
       }
     }
 
@@ -92,6 +90,14 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
   def sendMessageToClique(msg: (Address) => FruitarianMessage): Unit = {
     networkInfo.cliquePeers.foreach(p => handler.sendMessage(msg(p.address)))
     handler.sendMessage(msg(networkInfo.ownAddress))
+  }
+
+  def startNextRound(roundId: Int): Unit = {
+    val nextCenter = networkInfo.getNextPeer
+    nextCenter match {
+      case Some(p) => handler.sendMessage(NextRoundMessage(networkInfo.ownAddress, p.address, roundId))
+      case None => startMessageRound()
+    }
   }
 
 
@@ -136,8 +142,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         // rounds for testing purposes.
         Future {
           Thread.sleep(2 * MESSAGE_ROUND_TIMEOUT)
-          val nextCenter = networkInfo.getNextPeer
-          handler.sendMessage(NextRoundMessage(networkInfo.ownAddress, nextCenter.address, roundId))
+          startNextRound(roundId)
         }
       }
     }

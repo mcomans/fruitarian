@@ -9,8 +9,6 @@ import nl.tudelft.fruitarian.p2p.{Address, TCPHandler}
 
 object Main extends App {
   /* This example will start a Transmission Message Round with itself. */
-
-  //TODO: remove when center node election is implemented.
   val networkInfo = new NetworkInfo()
 
   val handler = if (args.length == 0) new TCPHandler() else new TCPHandler(args(0).toInt)
@@ -25,9 +23,8 @@ object Main extends App {
 
   transmissionObserver.queueMessage(s"Hi there from ${networkInfo.ownAddress.socket.getPort}")
 
-  // If we are a the centre node.
   if (args.length == 0) {
-    // TODO: Actually start a message round once elected centre node.
+    // Start first round as first node
     transmissionObserver.startMessageRound()
   }
 
