@@ -11,6 +11,7 @@ PATH_TO_BINARY = './target/universal/stage/bin/fruitarian'
 
 DEFAULT_HOST = 'localhost'
 DEFAULT_PORT = 5000
+CLIQUE_SIZE = 2
 
 procs = []
 threads = []
@@ -50,10 +51,10 @@ def package():
     proc.wait()
 
 
-def start_first_node():
+def start_first_node(clique_size):
     """Start the first node of the fruitarian network without any parameters."""
     log("----- Starting fruitarian node 0\n")
-    proc = subprocess.Popen(['./target/universal/stage/bin/fruitarian'], stdout=subprocess.PIPE,
+    proc = subprocess.Popen(['./target/universal/stage/bin/fruitarian', str(clique_size)], stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, universal_newlines=True)
     procs.append(proc)
 
@@ -64,7 +65,7 @@ def start_first_node():
     threads.append(thread)
 
 
-def add_node(idx, host, server_port, known_port):
+def add_node(idx, host, server_port, known_port, clique_size):
     """
     Add a node to the fruitarian network.
 
@@ -74,7 +75,7 @@ def add_node(idx, host, server_port, known_port):
     known_port: the port of an already known node
     """
     log(f"----- Starting fruitarian node {idx}\n")
-    proc = subprocess.Popen(['./target/universal/stage/bin/fruitarian', str(server_port), host, str(known_port)],
+    proc = subprocess.Popen(['./target/universal/stage/bin/fruitarian', str(server_port), host, str(known_port), str(clique_size)],
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
     procs.append(proc)
 
@@ -114,6 +115,8 @@ def parse_args():
                         help="specify known first port to connect to (default: 5000)")
     parser.add_argument('-s', '--skip-packaging', action='store_true',
                         help="skip packaging of the Scala project")
+    parser.add_argument('-q', '--clique', type=int, default=CLIQUE_SIZE,
+                        help="clique size (default: 2)")
     return parser.parse_args()
 
 
@@ -147,14 +150,14 @@ def main():
     for i in range(args.nodes):
         # Start a first node if we are not joining another host
         if i == 0 and new_network:
-            start_first_node()
+            start_first_node(args.clique)
         # 'Chain' the ports of the nodes if we are starting a network (for fun)
         elif new_network:
-            add_node(i, host, args.port + i, args.port + i - 1)
+            add_node(i, host, args.port + i, args.port + i - 1, args.clique)
         # Else, add nodes that join other host and known port
         # Starts numbering ports one up from known port number
         else:
-            add_node(i, host, args.port + 1 + i, args.port)
+            add_node(i, host, args.port + 1 + i, args.port, args.clique)
         # Make sure the nodes have some time to start
         time.sleep(1)
 

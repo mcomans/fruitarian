@@ -4,10 +4,14 @@ import nl.tudelft.fruitarian.p2p.Address
 
 import scala.collection.mutable.ArrayBuffer
 
-class NetworkInfo() {
+class NetworkInfo(size: Int) {
   val cliquePeers: ArrayBuffer[Peer] = ArrayBuffer[Peer]()
   var ownAddress: Address = _
   val nodeId: String = java.util.UUID.randomUUID.toString
+  val cliqueId: String = ""
+  val cliqueSize: Int = size
+
+  println("|||||||||||||||||||||" + cliqueSize)
 
   // Returns the addresses of all peers.
   def getPeers: List[(String, Address)] = {
