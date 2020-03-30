@@ -19,7 +19,7 @@ import scala.util.{Random, Try}
  */
 class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Observer[FruitarianMessage] {
   protected implicit val context: ExecutionContextExecutorService =
-    ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
+    ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(16))
   var messageRound: Promise[Boolean] = _
   val MESSAGE_ROUND_TIMEOUT = 5000
   val BACKOFF_RANGE = 10
