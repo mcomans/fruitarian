@@ -3,7 +3,7 @@ package nl.tudelft.fruitarian
 import java.net.InetSocketAddress
 
 import nl.tudelft.fruitarian.models.NetworkInfo
-import nl.tudelft.fruitarian.observers.{BasicLogger, EntryObserver, Greeter, TransmissionObserver}
+import nl.tudelft.fruitarian.observers.{BasicLogger, EntryObserver, ExperimentObserver, Greeter, TransmissionObserver}
 import nl.tudelft.fruitarian.p2p.messages.EntryRequest
 import nl.tudelft.fruitarian.p2p.{Address, TCPHandler}
 
@@ -18,10 +18,13 @@ object Main extends App {
   handler.addMessageObserver(new EntryObserver(handler, networkInfo))
   var transmissionObserver = new TransmissionObserver(handler, networkInfo)
   handler.addMessageObserver(transmissionObserver)
+  var experimentObserver = new ExperimentObserver(handler, transmissionObserver)
+  handler.addMessageObserver(experimentObserver)
 
   Thread.sleep(1000)
 
-  transmissionObserver.queueMessage(s"Hi there from ${networkInfo.ownAddress.socket.getPort}")
+  //transmissionObserver.queueMessage(s"Hi there from ${networkInfo.ownAddress
+  //  .socket.getPort}")
 
   if (args.length == 0) {
     // Start first round as first node
