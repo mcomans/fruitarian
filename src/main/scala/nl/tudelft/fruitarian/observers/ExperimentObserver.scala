@@ -1,7 +1,7 @@
 package nl.tudelft.fruitarian.observers
 
 import nl.tudelft.fruitarian.p2p.TCPHandler
-import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, ResultMessage}
+import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, NextRoundMessage, ResultMessage}
 import nl.tudelft.fruitarian.patterns.Observer
 
 import scala.collection.mutable.ListBuffer
@@ -16,6 +16,9 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
   val random = new Random()
   var lastMessage = ""
   var messageSentAt = System.currentTimeMillis()
+
+  var firstCenterRoundId: Int = -1
+  var firstCenterRoundAt: Long = 0
 
   val characters = "abcdefghijklmnopqrstuvwxyz".split("")
 
@@ -37,6 +40,18 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
     messagesSent += 1
   }
 
+  def handleCenterRound(round: Int): Unit = {
+    if (firstCenterRoundId < 0) {
+      firstCenterRoundId = round
+      firstCenterRoundAt = System.currentTimeMillis()
+    } else {
+      val roundDiff = round - firstCenterRoundId
+      val timeDiff = System.currentTimeMillis() - firstCenterRoundAt
+      val avgTimePerRound = timeDiff / roundDiff
+      println(s"[TEST] Average time per round: ${avgTimePerRound}ms")
+    }
+  }
+
   /* Start experiment */
   sendNewMessage()
 
@@ -46,6 +61,8 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
         sendNewMessage()
       }
       println(s"[TEST][$messagesSent/$noMessages] ${delays.sum / messagesSent}ms")
+    case NextRoundMessage(_, _, roundId) if roundId > firstCenterRoundId =>
+      handleCenterRound(roundId)
     case _ =>
   }
 }
