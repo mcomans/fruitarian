@@ -9,7 +9,7 @@ import scala.util.Random
 class UtilizationObserver(handler: TCPHandler, transmissionObserver: TransmissionObserver) extends
   Observer[FruitarianMessage] {
   var messagesSent = 0
-  val noMessages = 1000
+  val noMessages = 600
   var totalBytesReceived = 0
   var messageBytesReceived = 0
 
@@ -39,13 +39,13 @@ class UtilizationObserver(handler: TCPHandler, transmissionObserver: Transmissio
     case ResultMessage(from, to, message) if message == lastMessage =>
       if (messagesSent < noMessages) {
         sendNewMessage()
+        totalBytesReceived += MessageSerializer.serializeMsg(event).getBytes().length
+        messageBytesReceived += message.getBytes().length
+        println("[UTILIZATION] messages sent: " + messagesSent
+          + " total bytes: " + totalBytesReceived
+          + " total correct message bytes: " + messageBytesReceived
+          + " effective bandwidth utilization: " + messageBytesReceived.toFloat / totalBytesReceived)
       }
-      totalBytesReceived += MessageSerializer.serializeMsg(event).getBytes().length
-      messageBytesReceived += message.getBytes().length
-      println("[UTILIZATION_SENDER] messages sent: " + messagesSent
-      + " total: " + totalBytesReceived
-      + " message: " + messageBytesReceived
-      + " avg: " + messageBytesReceived.toFloat / totalBytesReceived)
     case _ =>
       totalBytesReceived += MessageSerializer.serializeMsg(event).getBytes().length
   }
