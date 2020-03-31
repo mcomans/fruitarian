@@ -18,7 +18,8 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
   var messageSentAt = System.currentTimeMillis()
 
   val firstRoundAt: Long = System.currentTimeMillis()
-  var failedRoundsSeen: Int = 0 // Should take this into account
+  var failedRoundsSeen: Int = 0
+  var lastFailedRound: Int = -1
 
   val characters = "abcdefghijklmnopqrstuvwxyz".split("")
 
@@ -40,27 +41,29 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
   def calculateDelay(): Unit = {
     val delay = System.currentTimeMillis() - messageSentAt
     delays += delay
-    val avgDelay = delays.sum / (messagesSent - failedRoundsSeen)
+    val avgDelay = delays.sum / messagesSent
     println(s"[TEST][$messagesSent/$noMessages] Last delay: ${delay}ms | Avg delay: ${avgDelay}ms")
   }
 
   def calculateBandwidth(): Unit = {
     val rounds = transmissionObserver.roundId
-    val timeDiff: Long = System.currentTimeMillis() - firstRoundAt
-    val correctRounds: Int = rounds - failedRoundsSeen
+    val timeDiff = System.currentTimeMillis() - firstRoundAt
+    val correctRounds = rounds - failedRoundsSeen
 
     if (correctRounds <= 0 || rounds <= 0) {
       return
     }
 
-    val avgTimePerRound: Long = timeDiff / rounds
-    val avgTimePerRoundCorrected: Long = timeDiff / correctRounds
-    val theoreticalMaxBandwidth: Long = 1000 / avgTimePerRound * 280
-    val actualMaxBandwidth: Long = 1000 / avgTimePerRoundCorrected * 280
+    val avgTimePerRound: Double = timeDiff / rounds
+    val avgTimePerRoundCorrected: Double = timeDiff / correctRounds
+    val theoreticalMaxBandwidth: Double = 1000 / avgTimePerRound * 280
+    val actualMaxBandwidth: Double = 1000 / avgTimePerRoundCorrected * 280
+    val prettyTheoreticalMaxBandwidth = (math rint theoreticalMaxBandwidth * 8) / 1000
+    val prettyActualMaxBandwidth = (math rint actualMaxBandwidth * 8) / 1000
 
     println(s"[TEST][$messagesSent/$noMessages] Avg time per round: ${avgTimePerRound}ms" +
-      s" | Theoretical max bandwidth: ${theoreticalMaxBandwidth * 8} b/s" +
-      s" | Actual max bandwidth: ${actualMaxBandwidth * 8} b/s")
+      s" | Theoretical max bandwidth: ${prettyTheoreticalMaxBandwidth} kb/s" +
+      s" | Actual max bandwidth: ${prettyActualMaxBandwidth} kb/s")
   }
 
   /* Start experiment */
@@ -72,6 +75,11 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
       calculateBandwidth()
       if (messagesSent < noMessages) {
         sendNewMessage()
+      }
+    case ResultMessage(_, _, message) if message == "TIMEOUT" =>
+      if (transmissionObserver.roundId > lastFailedRound) {
+        lastFailedRound = transmissionObserver.roundId
+        failedRoundsSeen += 1
       }
     case _ =>
   }
