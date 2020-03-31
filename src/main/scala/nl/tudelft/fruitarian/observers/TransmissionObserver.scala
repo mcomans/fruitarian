@@ -21,7 +21,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
   protected implicit val context: ExecutionContextExecutorService =
     ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(1))
   var messageRound: Promise[Boolean] = _
-  val MESSAGE_ROUND_TIMEOUT = 5000
+  val MESSAGE_ROUND_TIMEOUT = 50
   val BACKOFF_RANGE = 10
   var messageQueue = new mutable.Queue[String]()
   var messageSent: String = ""
