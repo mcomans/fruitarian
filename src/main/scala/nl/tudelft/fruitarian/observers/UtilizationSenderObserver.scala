@@ -42,7 +42,8 @@ class UtilizationSenderObserver(handler: TCPHandler, transmissionObserver: Trans
       }
       totalBytesReceived += MessageSerializer.serializeMsg(event).getBytes().length
       messageBytesReceived += message.getBytes().length
-      println("[UTILIZATION_SENDER] total: " + totalBytesReceived
+      println("[UTILIZATION_SENDER] messages sent: " + messagesSent
+      + " total: " + totalBytesReceived
       + " message: " + messageBytesReceived
       + " avg: " + messageBytesReceived.toFloat / totalBytesReceived)
     case _ =>
