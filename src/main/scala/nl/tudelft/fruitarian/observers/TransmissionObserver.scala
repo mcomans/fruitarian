@@ -126,36 +126,37 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         //  produce nonsense messages in case no one sends an actual encrypted
         //  message.
         messageSent = messageQueue.dequeue()
-        println(s"[C] Sent my message: '$messageSent'")
-        handler.sendMessage(TransmitMessage(to, from, (roundId, DCnet.encryptMessage(messageSent, networkInfo.cliquePeers.toList, roundId))))
+        println(s"[C][R$reqRoundId] Sent my message: '$messageSent'")
+        handler.sendMessage(TransmitMessage(to, from, (reqRoundId, DCnet
+          .encryptMessage(messageSent, networkInfo.cliquePeers.toList,
+            reqRoundId))))
       } else {
         // Else send a random message.
-        handler.sendMessage(TransmitMessage(to, from, (roundId, DCnet.getRandom(networkInfo.cliquePeers.toList, roundId))))
+        handler.sendMessage(TransmitMessage(to, from, (reqRoundId, DCnet.getRandom
+        (networkInfo.cliquePeers.toList, reqRoundId))))
       }
       // Decrease the backoff by one until 0.
       backoff = math.max(0, backoff - 1)
 
-    case TransmitMessage(_, _, message) => this.synchronized {
-      if (message._1 == roundId) {
-        // Only add the message if it matches the round id.
-        DCnet.appendResponse(message._2)
-      }
-      if (DCnet.canDecrypt) {
-        // Complete the messageRound promise to avoid the timeout call.
-        messageRound complete Try(true)
-        roundId += 1
-
-        // Send the decrypted message to the clique.
-        val decryptedMessage = DCnet.decryptReceivedMessages()
-        sendMessageToClique((address: Address) => ResultMessage(networkInfo.ownAddress, address, decryptedMessage))
-
-        // The next round is initiated by sending a message to the new center node.
-        // A delay of 500 is set between rounds for testing purposes.
-        Future {
-          startNextRound(roundId)
+    case TransmitMessage(_, _, message) =>
+      this.synchronized {
+        if (message._1 == roundId) {
+          // Only add the message if it matches the round id.
+          DCnet.appendResponse(message._2)
         }
       }
-    }
+      if (this.synchronized { DCnet.canDecrypt }) {
+        val decryptedMessage = DCnet.decryptReceivedMessages()
+          // Send the decrypted message to the clique.
+        Await.ready(sendMessageToClique((address: Address) => ResultMessage
+        (networkInfo.ownAddress, address, decryptedMessage)), 100.millis)
+
+        // This sleep is required before starting the next round, likely for
+        // different threads to start. It gives clients the time to handle
+        // the result message.
+        Thread.sleep(5)
+        startNextRound(roundId)
+      }
 
     case ResultMessage(_, _, msg) if !messageSent.isEmpty =>
       // If we recently sent a message, the next TextMessage received should be
