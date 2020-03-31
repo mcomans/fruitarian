@@ -27,7 +27,7 @@ object Main extends App {
   //  .socket.getPort}")
 
   if (args.length == 0) {
-    val utilizationSenderObserver = new UtilizationSenderObserver(handler, transmissionObserver)
+    val utilizationSenderObserver = new UtilizationObserver(handler, transmissionObserver)
     handler.addMessageObserver(utilizationSenderObserver)
     // Start first round as first node
     transmissionObserver.startMessageRound()
@@ -35,8 +35,6 @@ object Main extends App {
 
   // If we are a client node.
   if (args.length > 0) {
-    val utilizationReceiverObserver = new UtilizationReceiverObserver(handler, transmissionObserver)
-    handler.addMessageObserver(utilizationReceiverObserver)
     val helloWorldMessage = EntryRequest(
       Address(handler.serverHost),
       Address(new InetSocketAddress(args(1), args(2).toInt)),

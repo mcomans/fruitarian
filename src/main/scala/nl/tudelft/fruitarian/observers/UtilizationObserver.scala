@@ -6,7 +6,7 @@ import nl.tudelft.fruitarian.patterns.Observer
 
 import scala.util.Random
 
-class UtilizationSenderObserver(handler: TCPHandler, transmissionObserver: TransmissionObserver) extends
+class UtilizationObserver(handler: TCPHandler, transmissionObserver: TransmissionObserver) extends
   Observer[FruitarianMessage] {
   var messagesSent = 0
   val noMessages = 1000
