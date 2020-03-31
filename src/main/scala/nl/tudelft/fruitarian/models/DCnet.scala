@@ -4,7 +4,7 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.util.Random
 
 object DCnet {
-	val MESSAGE_SIZE = 280
+	val MESSAGE_SIZE = 4096
 
 	var transmitRequestsSent = 0
 

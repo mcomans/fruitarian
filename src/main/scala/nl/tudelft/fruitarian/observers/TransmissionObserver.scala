@@ -3,8 +3,8 @@ package nl.tudelft.fruitarian.observers
 import java.util.concurrent.Executors
 
 import nl.tudelft.fruitarian.models.{DCnet, NetworkInfo}
+import nl.tudelft.fruitarian.p2p.messages._
 import nl.tudelft.fruitarian.p2p.{Address, TCPHandler}
-import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, NextRoundMessage, ResultMessage, TextMessage, TransmitMessage, TransmitRequest}
 import nl.tudelft.fruitarian.patterns.Observer
 
 import scala.collection.mutable
@@ -19,7 +19,7 @@ import scala.util.{Random, Try}
  */
 class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Observer[FruitarianMessage] {
   protected implicit val context: ExecutionContextExecutorService =
-    ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(16))
+    ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(1))
   var messageRound: Promise[Boolean] = _
   val MESSAGE_ROUND_TIMEOUT = 5000
   val BACKOFF_RANGE = 10
