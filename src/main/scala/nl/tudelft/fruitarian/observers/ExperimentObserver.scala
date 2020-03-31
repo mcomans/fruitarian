@@ -17,9 +17,8 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
   var lastMessage = ""
   var messageSentAt = System.currentTimeMillis()
 
-  var firstCenterRoundId: Int = -1
-  var firstCenterRoundAt: Long = 0
-  var failedRoundsSeen: Int = 0
+  val firstRoundAt: Long = System.currentTimeMillis()
+  var failedRoundsSeen: Int = 0 // Should take this into account
 
   val characters = "abcdefghijklmnopqrstuvwxyz".split("")
 
@@ -45,46 +44,35 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
     println(s"[TEST][$messagesSent/$noMessages] Last delay: ${delay}ms | Avg delay: ${avgDelay}ms")
   }
 
-  def handleCenterRound(round: Int): Unit = {
-    if (firstCenterRoundId < 0) {
-      firstCenterRoundId = round
-      failedRoundsSeen = 0
-      firstCenterRoundAt = System.currentTimeMillis()
-    } else {
-      val roundDiff: Int = round - firstCenterRoundId
-      val timeDiff: Long = System.currentTimeMillis() - firstCenterRoundAt
-      val correctRounds: Int = roundDiff - failedRoundsSeen
+  def calculateBandwidth(): Unit = {
+    val rounds = transmissionObserver.roundId
+    val timeDiff: Long = System.currentTimeMillis() - firstRoundAt
+    val correctRounds: Int = rounds - failedRoundsSeen
 
-      if (correctRounds <= 0 || roundDiff <= 0) {
-        return
-      }
-
-      val avgTimePerRound: Long = timeDiff / roundDiff
-      val avgTimePerRoundCorrected: Long = timeDiff / correctRounds
-      val theoreticalMaxBandwidth: Long = 1000 / avgTimePerRound * 280
-      val actualMaxBandwidth: Long = 1000 / avgTimePerRoundCorrected * 280
-
-      println(s"[TEST][$messagesSent/$noMessages] Avg time per round: ${avgTimePerRound}ms" +
-        s" | Theoretical max bandwidth: ${theoreticalMaxBandwidth / 8} b/s" +
-        s" | Actual max bandwidth: ${actualMaxBandwidth / 8} b/s")
+    if (correctRounds <= 0 || rounds <= 0) {
+      return
     }
+
+    val avgTimePerRound: Long = timeDiff / rounds
+    val avgTimePerRoundCorrected: Long = timeDiff / correctRounds
+    val theoreticalMaxBandwidth: Long = 1000 / avgTimePerRound * 280
+    val actualMaxBandwidth: Long = 1000 / avgTimePerRoundCorrected * 280
+
+    println(s"[TEST][$messagesSent/$noMessages] Avg time per round: ${avgTimePerRound}ms" +
+      s" | Theoretical max bandwidth: ${theoreticalMaxBandwidth * 8} b/s" +
+      s" | Actual max bandwidth: ${actualMaxBandwidth * 8} b/s")
   }
 
   /* Start experiment */
   sendNewMessage()
 
   override def receiveUpdate(event: FruitarianMessage): Unit = event match {
-    case ResultMessage(from, _, message) =>
-      if (message == lastMessage) {
-        calculateDelay()
-      } else if (message == "TIMEOUT") {
-        failedRoundsSeen += 1
-      }
+    case ResultMessage(_, _, message) if message == lastMessage =>
+      calculateDelay()
+      calculateBandwidth()
       if (messagesSent < noMessages) {
         sendNewMessage()
       }
-    case NextRoundMessage(_, _, roundId) if roundId > firstCenterRoundId =>
-      handleCenterRound(roundId)
     case _ =>
   }
 }

@@ -21,8 +21,8 @@ object Main extends App {
 
   Thread.sleep(1000)
 
-  //transmissionObserver.queueMessage(s"Hi there from ${networkInfo.ownAddress
-  //  .socket.getPort}")
+//  transmissionObserver.queueMessage(s"Hi there from ${networkInfo.ownAddress
+//    .socket.getPort}")
 
   if (args.length == 0) {
     // Start first round as first node
