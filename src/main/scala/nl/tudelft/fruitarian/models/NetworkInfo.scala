@@ -11,7 +11,6 @@ class NetworkInfo(size: Int) {
   val cliqueId: String = ""
   val cliqueSize: Int = size
 
-  println("|||||||||||||||||||||" + cliqueSize)
 
   // Returns the addresses of all peers.
   def getPeers: List[(String, Address)] = {
