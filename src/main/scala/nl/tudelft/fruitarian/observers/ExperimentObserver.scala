@@ -1,7 +1,7 @@
 package nl.tudelft.fruitarian.observers
 
 import nl.tudelft.fruitarian.p2p.TCPHandler
-import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, ResultMessage}
+import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, NextRoundMessage, ResultMessage}
 import nl.tudelft.fruitarian.patterns.Observer
 
 import scala.collection.mutable.ListBuffer
@@ -17,6 +17,10 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
   var lastMessage = ""
   var messageSentAt = System.currentTimeMillis()
 
+  val firstRoundAt: Long = System.currentTimeMillis()
+  var failedRoundsSeen: Int = 0
+  var lastFailedRound: Int = -1
+
   val characters = "abcdefghijklmnopqrstuvwxyz".split("")
 
   def generateRandomMessage(msgSize: Int): String = {
@@ -27,25 +31,56 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
     msg
   }
 
-  def sendNewMessage() {
-    val delay = System.currentTimeMillis() - messageSentAt
-    delays += delay
-    println(s"[TEST] Last delay: ${delay}ms")
+  def sendNewMessage(): Unit = {
     lastMessage = generateRandomMessage(100)
     transmissionObserver.queueMessage(lastMessage)
     messageSentAt = System.currentTimeMillis()
     messagesSent += 1
   }
 
+  def calculateDelay(): Unit = {
+    val delay = System.currentTimeMillis() - messageSentAt
+    delays += delay
+    val avgDelay = delays.sum / messagesSent
+    println(s"[TEST][$messagesSent/$noMessages] Last delay: ${delay}ms | Avg delay: ${avgDelay}ms")
+  }
+
+  def calculateBandwidth(): Unit = {
+    val rounds = transmissionObserver.roundId
+    val timeDiff = System.currentTimeMillis() - firstRoundAt
+    val correctRounds = rounds - failedRoundsSeen
+
+    if (correctRounds <= 0 || rounds <= 0) {
+      return
+    }
+
+    val avgTimePerRound: Double = timeDiff / rounds
+    val avgTimePerRoundCorrected: Double = timeDiff / correctRounds
+    val theoreticalMaxBandwidth: Double = 1000 / avgTimePerRound * 280
+    val actualMaxBandwidth: Double = 1000 / avgTimePerRoundCorrected * 280
+    val prettyTheoreticalMaxBandwidth = (math rint theoreticalMaxBandwidth * 8) / 1000
+    val prettyActualMaxBandwidth = (math rint actualMaxBandwidth * 8) / 1000
+
+    println(s"[TEST][$messagesSent/$noMessages] Avg time per round: ${avgTimePerRound}ms" +
+      s" | Theoretical max bandwidth: ${prettyTheoreticalMaxBandwidth} kb/s" +
+      s" | Actual max bandwidth: ${prettyActualMaxBandwidth} kb/s")
+  }
+
   /* Start experiment */
   sendNewMessage()
 
   override def receiveUpdate(event: FruitarianMessage): Unit = event match {
-    case ResultMessage(from, to, message) if message == lastMessage =>
+    case ResultMessage(_, _, message) if message == lastMessage =>
+      calculateDelay()
+      calculateBandwidth()
       if (messagesSent < noMessages) {
         sendNewMessage()
       }
-      println(s"[TEST][$messagesSent/$noMessages] ${delays.sum / messagesSent}ms")
+    case ResultMessage(_, _, message) if message == "TIMEOUT" =>
+      if (transmissionObserver.roundId > lastFailedRound) {
+        lastFailedRound = transmissionObserver.roundId
+        failedRoundsSeen += 1
+      }
     case _ =>
   }
 }
