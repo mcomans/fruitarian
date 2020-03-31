@@ -19,20 +19,32 @@ import scala.util.{Random, Try}
  */
 class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extends Observer[FruitarianMessage] {
   protected implicit val context: ExecutionContextExecutorService =
-    ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
+    ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(16))
   var messageRound: Promise[Boolean] = _
   val MESSAGE_ROUND_TIMEOUT = 5000
   val BACKOFF_RANGE = 10
-  val messageQueue = new mutable.Queue[String]()
+  var messageQueue = new mutable.Queue[String]()
   var messageSent: String = ""
   var backoff = 0
   var roundId = 0
 
-  def queueMessage(message: String): Unit = {
+  /**
+   * Add a message to the message queue.
+   * The message will be sent in the next round if the backoff is not set.
+   * @param message The message to be sent.
+   * @param prioritise Whether to prioritise this message (aka send it as
+   *                   soon as possible instead of adding it in the back of
+   *                   the queue).
+   */
+  def queueMessage(message: String, prioritise: Boolean = false): Unit = {
     if (message.length > DCnet.MESSAGE_SIZE) {
       throw new Exception("Message too long.")
     }
-    messageQueue.enqueue(message)
+    if (prioritise) {
+      messageQueue = mutable.Queue[String](message) ++ messageQueue
+    } else {
+      messageQueue.enqueue(message)
+    }
   }
 
   /**
@@ -152,7 +164,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         // If the message is not as sent, queue the message for sending again.
         // We apply a random backoff in amount of cycles to hopefully prevent
         // another collision.
-        queueMessage(messageSent)
+        queueMessage(messageSent, true)
         backoff = new Random().nextInt(BACKOFF_RANGE)
         println(s"[C] Message not sent correctly, enqueued again in $backoff cycles.")
       }
