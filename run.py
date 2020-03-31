@@ -129,53 +129,48 @@ def stop(sig, frame):
     sys.exit(0)
 
 
-def main():
-    args = parse_args()
-    # Register handler for SIGINT
-    signal.signal(signal.SIGINT, stop)
+args = parse_args()
+# Register handler for SIGINT
+signal.signal(signal.SIGINT, stop)
 
-    if args.nodes < 1:
-        sys.exit("At least one node should be started")
-    if not args.skip_packaging:
-        package()
+if args.nodes < 1:
+    sys.exit("At least one node should be started")
+if not args.skip_packaging:
+    package()
 
-    # Start a thread for monitoring the other threads
-    print_thread = threading.Thread(target=print_output)
-    print_thread.daemon = True
-    print_thread.start()
+# Start a thread for monitoring the other threads
+print_thread = threading.Thread(target=print_output)
+print_thread.daemon = True
+print_thread.start()
 
-    new_network = args.join is None
-    host = 'localhost' if new_network or args.join in {
-        'localhost', '127.0.0.1', '0.0.0.0'} else args.join
+new_network = args.join is None
+host = 'localhost' if new_network or args.join in {
+    'localhost', '127.0.0.1', '0.0.0.0'} else args.join
 
-    experiment_nodes = args.experiment
+experiment_nodes = args.experiment
 
-    for i in range(args.nodes):
-        should_be_exp = experiment_nodes > 0
-        # Start a first node if we are not joining another host
-        if i == 0 and new_network:
-            start_first_node(should_be_exp)
-        # 'Chain' the ports of the nodes if we are starting a network (for fun)
-        elif new_network:
-            add_node(i, host, args.port + i, args.port + i - 1, should_be_exp)
-        # Else, add nodes that join other host and known port
-        # Starts numbering ports one up from known port number
-        else:
-            add_node(i, host, args.port + 1 + i, args.port, should_be_exp)
+for i in range(args.nodes):
+    should_be_exp = experiment_nodes > 0
+    # Start a first node if we are not joining another host
+    if i == 0 and new_network:
+        start_first_node(should_be_exp)
+    # 'Chain' the ports of the nodes if we are starting a network (for fun)
+    elif new_network:
+        add_node(i, host, args.port + i, args.port + i - 1, should_be_exp)
+    # Else, add nodes that join other host and known port
+    # Starts numbering ports one up from known port number
+    else:
+        add_node(i, host, args.port + 1 + i, args.port, should_be_exp)
 
-        if should_be_exp:
-            experiment_nodes -= 1
+    if should_be_exp:
+        experiment_nodes -= 1
 
-        # Make sure the nodes have some time to start
+    # Make sure the nodes have some time to start
+    time.sleep(1)
+
+while True:
+    if print_thread.is_alive():
         time.sleep(1)
 
-    while True:
-        if print_thread.is_alive():
-            time.sleep(1)
-
-    log("All nodes stopped, exiting...")
-    sys.exit(0)
-
-
-if __name__ == '__main__':
-    main()
+log("All nodes stopped, exiting...")
+sys.exit(0)
