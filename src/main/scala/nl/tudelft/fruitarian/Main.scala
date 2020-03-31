@@ -13,13 +13,13 @@ object Main extends App {
 
   val handler = if (args.length == 0) new TCPHandler() else new TCPHandler(args(0).toInt)
   networkInfo.ownAddress = Address(handler.serverHost)
-//  handler.addMessageObserver(BasicLogger)
+  handler.addMessageObserver(BasicLogger)
   handler.addMessageObserver(new Greeter(handler))
   handler.addMessageObserver(new EntryObserver(handler, networkInfo))
   var transmissionObserver = new TransmissionObserver(handler, networkInfo)
   handler.addMessageObserver(transmissionObserver)
-//    var experimentObserver = new ExperimentObserver(handler, transmissionObserver)
-//    handler.addMessageObserver(experimentObserver)
+  var experimentObserver = new ExperimentObserver(handler, transmissionObserver)
+  handler.addMessageObserver(experimentObserver)
 
   Thread.sleep(1000)
 
