@@ -18,8 +18,6 @@ object Main extends App {
   handler.addMessageObserver(new EntryObserver(handler, networkInfo))
   var transmissionObserver = new TransmissionObserver(handler, networkInfo)
   handler.addMessageObserver(transmissionObserver)
-  var experimentObserver = new ExperimentObserver(handler, transmissionObserver)
-  handler.addMessageObserver(experimentObserver)
 
   Thread.sleep(1000)
 
@@ -28,6 +26,8 @@ object Main extends App {
 
   if (args.length == 0) {
     // Start first round as first node
+    val experimentObserver = new ExperimentObserver(handler, transmissionObserver)
+    handler.addMessageObserver(experimentObserver)
     transmissionObserver.startMessageRound()
   }
 
