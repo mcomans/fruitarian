@@ -50,10 +50,11 @@ def package():
     proc.wait()
 
 
-def start_first_node():
+def start_first_node(experiment):
     """Start the first node of the fruitarian network without any parameters."""
     log("----- Starting fruitarian node 0\n")
-    proc = subprocess.Popen(['./target/universal/stage/bin/fruitarian'], stdout=subprocess.PIPE,
+    exp_flag = '-e' if experiment else ''
+    proc = subprocess.Popen(['./target/universal/stage/bin/fruitarian', exp_flag], stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, universal_newlines=True)
     procs.append(proc)
 
@@ -64,7 +65,7 @@ def start_first_node():
     threads.append(thread)
 
 
-def add_node(idx, host, server_port, known_port):
+def add_node(idx, host, server_port, known_port, experiment):
     """
     Add a node to the fruitarian network.
 
@@ -74,7 +75,8 @@ def add_node(idx, host, server_port, known_port):
     known_port: the port of an already known node
     """
     log(f"----- Starting fruitarian node {idx}\n")
-    proc = subprocess.Popen(['./target/universal/stage/bin/fruitarian', str(server_port), host, str(known_port)],
+    exp_flag = '-e' if experiment else ''
+    proc = subprocess.Popen(['./target/universal/stage/bin/fruitarian', str(server_port), host, str(known_port), exp_flag],
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
     procs.append(proc)
 
@@ -108,6 +110,8 @@ def parse_args():
 
     parser.add_argument('-n', '--nodes', type=int, required=True,
                         help="number of nodes to start")
+    parser.add_argument('-e', '--experiment', type=int, default=1, metavar='NUMBER',
+                        help="number of nodes that should start an experiment (default: 1)")
     parser.add_argument('-j', '--join', type=str, nargs='?', const=DEFAULT_HOST, default=None, metavar='HOST',
                         help="specify host to join already existing network (default when HOST unspecified: localhost)")
     parser.add_argument('-p', '--port', type=int, default=DEFAULT_PORT,
@@ -144,17 +148,24 @@ def main():
     host = 'localhost' if new_network or args.join in {
         'localhost', '127.0.0.1', '0.0.0.0'} else args.join
 
+    experiment_nodes = args.experiment
+
     for i in range(args.nodes):
+        should_be_exp = experiment_nodes > 0
         # Start a first node if we are not joining another host
         if i == 0 and new_network:
-            start_first_node()
+            start_first_node(should_be_exp)
         # 'Chain' the ports of the nodes if we are starting a network (for fun)
         elif new_network:
-            add_node(i, host, args.port + i, args.port + i - 1)
+            add_node(i, host, args.port + i, args.port + i - 1, should_be_exp)
         # Else, add nodes that join other host and known port
         # Starts numbering ports one up from known port number
         else:
-            add_node(i, host, args.port + 1 + i, args.port)
+            add_node(i, host, args.port + 1 + i, args.port, should_be_exp)
+
+        if should_be_exp:
+            experiment_nodes -= 1
+
         # Make sure the nodes have some time to start
         time.sleep(1)
 
