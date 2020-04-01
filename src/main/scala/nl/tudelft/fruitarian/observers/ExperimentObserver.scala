@@ -1,5 +1,6 @@
 package nl.tudelft.fruitarian.observers
 
+import nl.tudelft.fruitarian.models.DCnet
 import nl.tudelft.fruitarian.p2p.TCPHandler
 import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, ResultMessage}
 import nl.tudelft.fruitarian.patterns.Observer
@@ -32,7 +33,7 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
   }
 
   def sendNewMessage(): Unit = {
-    lastMessage = generateRandomMessage(100)
+    lastMessage = generateRandomMessage(DCnet.MESSAGE_SIZE)
     transmissionObserver.queueMessage(lastMessage)
     messageSentAt = System.currentTimeMillis()
     messagesSent += 1
@@ -56,14 +57,14 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
 
     val avgTimePerRound: Double = timeDiff / rounds
     val avgTimePerRoundCorrected: Double = timeDiff / correctRounds
-    val theoreticalMaxBandwidth: Double = 1000 / avgTimePerRound * 280
-    val actualMaxBandwidth: Double = 1000 / avgTimePerRoundCorrected * 280
-    val prettyTheoreticalMaxBandwidth = (math rint theoreticalMaxBandwidth * 8) / 1000
-    val prettyActualMaxBandwidth = (math rint actualMaxBandwidth * 8) / 1000
+    val theoreticalMaxBandwidth: Double = 1024 / avgTimePerRound * DCnet.MESSAGE_SIZE
+    val actualMaxBandwidth: Double = 1024 / avgTimePerRoundCorrected * DCnet.MESSAGE_SIZE
+    val prettyTheoreticalMaxBandwidth = (math rint theoreticalMaxBandwidth * 8) / 1024
+    val prettyActualMaxBandwidth = (math rint actualMaxBandwidth * 8) / 1024
 
     println(s"[TEST][$messagesSent/$noMessages] Avg time per round: ${avgTimePerRound}ms" +
-      s" | Theoretical max bandwidth: ${prettyTheoreticalMaxBandwidth} kb/s" +
-      s" | Actual max bandwidth: ${prettyActualMaxBandwidth} kb/s")
+      s" | Theoretical max bandwidth: ${prettyTheoreticalMaxBandwidth} Kb/s" +
+      s" | Actual max bandwidth: ${prettyActualMaxBandwidth} Kb/s")
   }
 
   /* Start experiment */

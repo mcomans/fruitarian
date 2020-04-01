@@ -1,5 +1,6 @@
 package nl.tudelft.fruitarian.observers
 
+import nl.tudelft.fruitarian.models.DCnet
 import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, ResultMessage}
 import nl.tudelft.fruitarian.p2p.{MessageSerializer, TCPHandler}
 import nl.tudelft.fruitarian.patterns.Observer
@@ -27,7 +28,7 @@ class UtilizationObserver(handler: TCPHandler, transmissionObserver: Transmissio
   }
 
   def sendNewMessage() {
-    lastMessage = generateRandomMessage(4096)
+    lastMessage = generateRandomMessage(DCnet.MESSAGE_SIZE)
     transmissionObserver.queueMessage(lastMessage)
     messagesSent += 1
   }
@@ -42,8 +43,8 @@ class UtilizationObserver(handler: TCPHandler, transmissionObserver: Transmissio
         totalBytesReceived += MessageSerializer.serializeMsg(event).getBytes().length
         messageBytesReceived += message.getBytes().length
         println("[UTILIZATION] messages sent: " + messagesSent
-          + " total bytes: " + totalBytesReceived
-          + " total correct message bytes: " + messageBytesReceived
+          + " total in Kb: " + (math rint totalBytesReceived * 8) / 1024
+          + " correct messages in (Kb): " + (math rint messageBytesReceived * 8) / 1024
           + " effective bandwidth utilization: " + messageBytesReceived.toFloat / totalBytesReceived)
       }
     case _ =>
