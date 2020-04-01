@@ -38,14 +38,14 @@ class UtilizationObserver(handler: TCPHandler, transmissionObserver: Transmissio
 
   override def receiveUpdate(event: FruitarianMessage): Unit = event match {
     case ResultMessage(from, to, message) if message == lastMessage =>
-      if (messagesSent < noMessages) {
-        sendNewMessage()
+      if (messagesSent <= noMessages) {
         totalBytesReceived += MessageSerializer.serializeMsg(event).getBytes().length
         messageBytesReceived += message.getBytes().length
         println("[UTILIZATION] messages sent: " + messagesSent
           + " total in Kb: " + (math rint totalBytesReceived * 8) / 1024
           + " correct messages in (Kb): " + (math rint messageBytesReceived * 8) / 1024
           + " effective bandwidth utilization: " + messageBytesReceived.toFloat / totalBytesReceived)
+        sendNewMessage()
       }
     case _ =>
       totalBytesReceived += MessageSerializer.serializeMsg(event).getBytes().length
