@@ -57,8 +57,8 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
 
     val avgTimePerRound: Double = timeDiff / rounds
     val avgTimePerRoundCorrected: Double = timeDiff / correctRounds
-    val theoreticalMaxBandwidth: Double = 1024 / avgTimePerRound * DCnet.MESSAGE_SIZE
-    val actualMaxBandwidth: Double = 1024 / avgTimePerRoundCorrected * DCnet.MESSAGE_SIZE
+    val theoreticalMaxBandwidth: Double = 1000 / avgTimePerRound * DCnet.MESSAGE_SIZE
+    val actualMaxBandwidth: Double = 1000 / avgTimePerRoundCorrected * DCnet.MESSAGE_SIZE
     val prettyTheoreticalMaxBandwidth = (math rint theoreticalMaxBandwidth * 8) / 1024
     val prettyActualMaxBandwidth = (math rint actualMaxBandwidth * 8) / 1024
 
