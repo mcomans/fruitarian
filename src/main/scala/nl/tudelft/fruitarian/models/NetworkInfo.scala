@@ -1,5 +1,7 @@
 package nl.tudelft.fruitarian.models
 
+import java.net.InetSocketAddress
+
 import nl.tudelft.fruitarian.p2p.Address
 
 import scala.collection.mutable.ArrayBuffer

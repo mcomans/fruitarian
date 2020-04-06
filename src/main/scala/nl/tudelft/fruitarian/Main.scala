@@ -18,8 +18,11 @@ object Main extends App {
   val startingNode = args.length == 0 || experimentStartingNode || chatStartingNode
 
   val handler = if (startingNode) new TCPHandler() else new TCPHandler(args(0).toInt)
-  networkInfo.ownAddress = Address(handler.serverHost)
-  if (!chatNode) handler.addMessageObserver(BasicLogger)
+  if (!chatNode) {
+    // If you are a chatNode you need to set your networkInfo.ownAddress to your machine ip.
+    networkInfo.ownAddress = Address(handler.serverHost)
+    handler.addMessageObserver(BasicLogger)
+  }
   handler.addMessageObserver(new Greeter(handler))
   handler.addMessageObserver(new EntryObserver(handler, networkInfo))
   var transmissionObserver = new TransmissionObserver(handler, networkInfo)
