@@ -19,10 +19,7 @@ object MessageSerializer {
   }
   def deserialize(data: String, from: Address): FruitarianMessage = {
     parse(data) match {
-      case JObject(("header", h) :: ("body", JString(body)) :: Nil) =>
-        val header = h.extract[MessageHeader]
-        header.from = from
-        header match {
+      case JObject(("header", h) :: ("body", JString(body)) :: Nil) => h.extract[MessageHeader] match {
           case header @ MessageHeader(TextMessage.MessageType, _, _) => TextMessage.fromHeaderAndBody(header, body)
           case header @ MessageHeader(EntryResponse.MessageType, _, _) => EntryResponse.fromHeaderAndBody(header, body)
           case header @ MessageHeader(EntryRequest.MessageType, _, _) => EntryRequest.fromHeaderAndBody(header, body)
