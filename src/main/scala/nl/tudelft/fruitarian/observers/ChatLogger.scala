@@ -3,7 +3,7 @@ package nl.tudelft.fruitarian.observers
 
 import java.time.LocalDate
 
-import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, ResultMessage}
+import nl.tudelft.fruitarian.p2p.messages.{AnnounceMessage, EntryRequest, FruitarianMessage, ResultMessage}
 import nl.tudelft.fruitarian.patterns.Observer
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -78,6 +78,9 @@ class ChatLogger(transmissionObserver: TransmissionObserver) extends Observer[Fr
   renderMenu()
 
   override def receiveUpdate(event: FruitarianMessage): Unit = event match {
+    case EntryRequest(_, _, _) | AnnounceMessage(_, _, _) =>
+      val msg = ChatMessage(LocalDate.now(), s"<Clique>: Node joined!")
+      msgHistory = msgHistory :+ msg
     case ResultMessage(_, _, message) => stripNonReadableBytes(message) match {
       /* In case we get a non-empty message print it. */
       case s if !s.isEmpty =>
