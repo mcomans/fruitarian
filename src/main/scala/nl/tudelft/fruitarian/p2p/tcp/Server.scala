@@ -5,6 +5,7 @@ import java.net.InetSocketAddress
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.io.Tcp._
 import akka.io.{IO, Tcp}
+import nl.tudelft.fruitarian.Logger
 import nl.tudelft.fruitarian.p2p.messages.FruitarianMessage
 import nl.tudelft.fruitarian.p2p.{Address, Connections, TCPConnection}
 
@@ -31,7 +32,7 @@ class Server(host: InetSocketAddress, callback: FruitarianMessage => Unit) exten
   def receive: Receive = {
     // When the bound to our IO(Tcp) listener is completed.
     case b @ Bound(localAddress) =>
-      println(s"[S] Listening on [$localAddress]")
+      Logger.log(s"[S] Listening on [$localAddress]", Logger.Level.INFO)
 
     // When the bound to our IO(Tcp) listener failed.
     case CommandFailed(_: Bind) => context.stop(self)
@@ -42,7 +43,7 @@ class Server(host: InetSocketAddress, callback: FruitarianMessage => Unit) exten
       val connection = sender()
       val handler = context.actorOf(ConnectionHandler.props(connection, remote, callback))
       connection ! Register(handler)
-      println(s"[S] Client connected from [$remote]")
+      Logger.log(s"[S] Client connected from [$remote]", Logger.Level.INFO)
       Connections.addConnection(TCPConnection(Address(remote), handler))
   }
 }

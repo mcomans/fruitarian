@@ -1,5 +1,6 @@
 package nl.tudelft.fruitarian.observers
 
+import nl.tudelft.fruitarian.Logger
 import nl.tudelft.fruitarian.models.{DCnet, NetworkInfo}
 import nl.tudelft.fruitarian.p2p.messages._
 import nl.tudelft.fruitarian.p2p.{Address, TCPHandler}
@@ -74,8 +75,8 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
     // Set the amount of requests sent.
     DCnet.transmitRequestsSent = networkInfo.cliquePeers.length + 1
 
-    println(s"[S] [${networkInfo.nodeId}] Started Message round " +
-      s"[R$roundId] for ${DCnet.transmitRequestsSent} node(s).")
+    Logger.log(s"[S] [${networkInfo.nodeId}] Started Message round " +
+      s"[R$roundId] for ${DCnet.transmitRequestsSent} node(s).", Logger.Level.DEBUG)
 
     val timeoutFuture = Future[Boolean] {
       // Save the roundId in which this timeout future started.
@@ -102,7 +103,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
       if (!r.get) {
         break;
       }
-      println(s"[S] Message round [$roundId] timed out, retrying...")
+      Logger.log(s"[S] Message round [$roundId] timed out, retrying...", Logger.Level.ERROR)
       // Send a "TIMEOUT" Text message to all peers to let them know the
       // round failed and trigger the message requeue behaviour if one of
       // them actually sent a message this round.
@@ -143,7 +144,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         //  produce nonsense messages in case no one sends an actual encrypted
         //  message.
         messageSent = messageQueue.dequeue()
-        println(s"[C][R$reqRoundId] Sent my message: '$messageSent'")
+        Logger.log(s"[C][R$reqRoundId] Sent my message: '$messageSent'", Logger.Level.DEBUG)
         handler.sendMessage(TransmitMessage(to, from, (reqRoundId, DCnet
           .encryptMessage(messageSent, networkInfo.cliquePeers.toList,
             reqRoundId))))
@@ -184,7 +185,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
         // another collision.
         queueMessage(messageSent, true)
         backoff = new Random().nextInt(BACKOFF_RANGE)
-        println(s"[C] Message not sent correctly, enqueued again in $backoff cycles.")
+        Logger.log(s"[C] Message not sent correctly, enqueued again in $backoff cycles.", Logger.Level.ERROR)
       }
       // Unblock the message sending process to allow the next message or a resend.
       messageSent = ""
