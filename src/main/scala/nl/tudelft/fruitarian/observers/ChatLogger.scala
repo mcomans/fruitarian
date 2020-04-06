@@ -83,6 +83,7 @@ class ChatLogger(transmissionObserver: TransmissionObserver) extends Observer[Fr
       msgHistory = msgHistory :+ msg
     case ResultMessage(_, _, message) => stripNonReadableBytes(message) match {
       /* In case we get a non-empty message print it. */
+      case "TIMEOUT" =>
       case s if !s.isEmpty =>
         val msg = ChatMessage(LocalDate.now(), s"<Clique>: $s")
         msgHistory = msgHistory :+ msg

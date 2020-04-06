@@ -29,7 +29,7 @@ object Main extends App {
 
   if (chatNode) {
     // Only log errors in chat mode.
-    Logger.logLevels = List(Logger.Level.ERROR)
+    Logger.logLevels = Nil
     handler.addMessageObserver(new ChatLogger(transmissionObserver))
   }
 
