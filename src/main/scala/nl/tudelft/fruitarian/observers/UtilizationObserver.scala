@@ -1,11 +1,10 @@
 package nl.tudelft.fruitarian.observers
 
 import nl.tudelft.fruitarian.models.DCnet
+import nl.tudelft.fruitarian.observers.helper.ExperimentHelper
 import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, ResultMessage}
 import nl.tudelft.fruitarian.p2p.{MessageSerializer, TCPHandler}
 import nl.tudelft.fruitarian.patterns.Observer
-
-import scala.util.Random
 
 class UtilizationObserver(handler: TCPHandler, transmissionObserver: TransmissionObserver) extends
   Observer[FruitarianMessage] {
@@ -14,21 +13,10 @@ class UtilizationObserver(handler: TCPHandler, transmissionObserver: Transmissio
   var totalBytesReceived = 0
   var messageBytesReceived = 0
 
-  val random = new Random()
   var lastMessage = ""
 
-  val characters = "abcdefghijklmnopqrstuvwxyz".split("")
-
-  def generateRandomMessage(msgSize: Int): String = {
-    var msg = ""
-    for (x <- 1 to msgSize) {
-      msg += characters(random.nextInt(characters.length))
-    }
-    msg
-  }
-
   def sendNewMessage() {
-    lastMessage = generateRandomMessage(DCnet.MESSAGE_SIZE)
+    lastMessage = ExperimentHelper.generateRandomMessage(DCnet.MESSAGE_SIZE)
     transmissionObserver.queueMessage(lastMessage)
     messagesSent += 1
   }

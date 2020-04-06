@@ -1,12 +1,12 @@
 package nl.tudelft.fruitarian.observers
 
 import nl.tudelft.fruitarian.models.DCnet
+import nl.tudelft.fruitarian.observers.helper.ExperimentHelper
 import nl.tudelft.fruitarian.p2p.TCPHandler
 import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, ResultMessage, TransmitRequest}
 import nl.tudelft.fruitarian.patterns.Observer
 
 import scala.collection.mutable.ListBuffer
-import scala.util.Random
 
 class ExperimentObserver(handler: TCPHandler, transmissionObserver: TransmissionObserver) extends
   Observer[FruitarianMessage] {
@@ -14,27 +14,17 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
   val noMessages = 1000
 
   var delays = new ListBuffer[Long]()
-  val random = new Random()
   var lastMessage = ""
   var experimentStarted = false
-  var messageSentAt = System.currentTimeMillis()
+  var messageSentAt: Long = System.currentTimeMillis()
 
   val firstRoundAt: Long = System.currentTimeMillis()
   var failedRoundsSeen: Int = 0
   var lastFailedRound: Int = -1
 
-  val characters = "abcdefghijklmnopqrstuvwxyz".split("")
-
-  def generateRandomMessage(msgSize: Int): String = {
-    var msg = ""
-    for (x <- 1 to msgSize) {
-      msg += characters(random.nextInt(characters.length))
-    }
-    msg
-  }
 
   def sendNewMessage(): Unit = {
-    lastMessage = generateRandomMessage(DCnet.MESSAGE_SIZE)
+    lastMessage = ExperimentHelper.generateRandomMessage(DCnet.MESSAGE_SIZE)
     transmissionObserver.queueMessage(lastMessage)
     messageSentAt = System.currentTimeMillis()
     messagesSent += 1
