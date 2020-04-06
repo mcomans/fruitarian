@@ -2,7 +2,7 @@ package nl.tudelft.fruitarian.observers
 
 import nl.tudelft.fruitarian.models.DCnet
 import nl.tudelft.fruitarian.p2p.TCPHandler
-import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, ResultMessage}
+import nl.tudelft.fruitarian.p2p.messages.{FruitarianMessage, ResultMessage, TransmitRequest}
 import nl.tudelft.fruitarian.patterns.Observer
 
 import scala.collection.mutable.ListBuffer
@@ -16,6 +16,7 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
   var delays = new ListBuffer[Long]()
   val random = new Random()
   var lastMessage = ""
+  var experimentStarted = false
   var messageSentAt = System.currentTimeMillis()
 
   val firstRoundAt: Long = System.currentTimeMillis()
@@ -67,17 +68,20 @@ class ExperimentObserver(handler: TCPHandler, transmissionObserver: Transmission
       s" | Actual max bandwidth: ${prettyActualMaxBandwidth} Kb/s")
   }
 
-  /* Start experiment */
-  sendNewMessage()
-
   override def receiveUpdate(event: FruitarianMessage): Unit = event match {
-    case ResultMessage(_, _, message) if message == lastMessage =>
+    case TransmitRequest(_, _, _) if !experimentStarted =>
+      // Start the experiment if there is no lastMessage
+      sendNewMessage()
+      experimentStarted = true
+    case ResultMessage(_, _, message) if experimentStarted && message == lastMessage =>
       calculateDelay()
       calculateBandwidth()
       if (messagesSent < noMessages) {
         sendNewMessage()
+      } else {
+        println(s"[TEST] Completed | Failed rounds: $failedRoundsSeen")
       }
-    case ResultMessage(_, _, message) if message == "TIMEOUT" =>
+    case ResultMessage(_, _, message) if experimentStarted && message == "TIMEOUT" =>
       if (transmissionObserver.roundId > lastFailedRound) {
         lastFailedRound = transmissionObserver.roundId
         failedRoundsSeen += 1
