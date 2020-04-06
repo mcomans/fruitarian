@@ -12,9 +12,10 @@ object Main extends App {
   val networkInfo = new NetworkInfo()
 
   val experimentNode = args.contains("-e")
-  val experimentStartingNode = args.length == 1 && experimentNode
   val chatNode = args.contains("--chat")
-  val startingNode = args.length == 0 || experimentStartingNode
+  val experimentStartingNode = args.length == 1 && experimentNode
+  val chatStartingNode = args.length == 1 && chatNode
+  val startingNode = args.length == 0 || experimentStartingNode || chatStartingNode
 
   val handler = if (startingNode) new TCPHandler() else new TCPHandler(args(0).toInt)
   networkInfo.ownAddress = Address(handler.serverHost)
