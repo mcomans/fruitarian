@@ -31,8 +31,6 @@ object Main extends App {
     Logger.logLevels = List(Logger.Level.ERROR)
     handler.addMessageObserver(new ChatLogger(transmissionObserver))
   }
-//  transmissionObserver.queueMessage(s"Hi there from ${networkInfo.ownAddress
-//    .socket.getPort}")
 
   if (startingNode) {
     // Start first round as first node
