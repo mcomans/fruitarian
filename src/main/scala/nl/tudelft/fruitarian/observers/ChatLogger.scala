@@ -2,6 +2,7 @@ package nl.tudelft.fruitarian.observers
 
 
 import java.time.LocalDate
+import java.util.concurrent.Executors
 
 import nl.tudelft.fruitarian.p2p.messages.{AnnounceMessage, EntryRequest, FruitarianMessage, ResultMessage}
 import nl.tudelft.fruitarian.patterns.Observer
@@ -15,8 +16,7 @@ import scala.io.StdIn.readLine
  * This mode is implemented for demonstration purposes.
  */
 class ChatLogger(transmissionObserver: TransmissionObserver) extends Observer[FruitarianMessage] {
-  protected implicit val context: ExecutionContextExecutor =
-    ExecutionContext.global
+  protected implicit val context: ExecutionContextExecutor = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
   case class ChatMessage(datetime: LocalDate, msg: String)
   def stripNonReadableBytes(msg: String): String = BasicLogger.stripNonReadableBytes(msg)
 
