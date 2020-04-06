@@ -38,6 +38,7 @@ class ChatLogger(transmissionObserver: TransmissionObserver) extends Observer[Fr
     inputFuture.onComplete(msg => {
       if (msg.isSuccess) {
         msg.get match {
+          case "/debug" => println(transmissionObserver.roundId)
           case "/inbox" => renderInbox()
           case "/inbox clear" => clearInbox()
           case "/help" => renderHelp()
