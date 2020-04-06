@@ -60,9 +60,7 @@ class Client(remote: InetSocketAddress, callback: FruitarianMessage => Unit) ext
 
         // When data received, send it to the listener.
         case Received(data: ByteString) =>
-          val msg: FruitarianMessage = MessageSerializer.deserialize(data.decodeString("utf-8"))
-          // Set the msg header from field to the actual receiver value.
-          msg.header.from = Address(remote)
+          val msg: FruitarianMessage = MessageSerializer.deserialize(data.decodeString("utf-8"), Address(remote))
           callback(msg)
 
         // On close command.
