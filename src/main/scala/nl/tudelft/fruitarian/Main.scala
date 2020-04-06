@@ -3,7 +3,7 @@ package nl.tudelft.fruitarian
 import java.net.InetSocketAddress
 
 import nl.tudelft.fruitarian.models.NetworkInfo
-import nl.tudelft.fruitarian.observers.{BasicLogger, EntryObserver, ExperimentObserver, Greeter, TransmissionObserver}
+import nl.tudelft.fruitarian.observers.{BasicLogger, ChatLogger, EntryObserver, ExperimentObserver, Greeter, TransmissionObserver}
 import nl.tudelft.fruitarian.p2p.messages.EntryRequest
 import nl.tudelft.fruitarian.p2p.{Address, TCPHandler}
 
@@ -13,11 +13,11 @@ object Main extends App {
 
   val experimentNode = args.contains("-e")
   val experimentStartingNode = args.length == 1 && experimentNode
-  val startingNode = args.length == 0 || experimentStartingNode
+  val chatNode = args.contains("--chat")
 
   val handler = if (startingNode) new TCPHandler() else new TCPHandler(args(0).toInt)
   networkInfo.ownAddress = Address(handler.serverHost)
-  handler.addMessageObserver(BasicLogger)
+  if (!chatNode) handler.addMessageObserver(BasicLogger)
   handler.addMessageObserver(new Greeter(handler))
   handler.addMessageObserver(new EntryObserver(handler, networkInfo))
   var transmissionObserver = new TransmissionObserver(handler, networkInfo)
@@ -25,6 +25,11 @@ object Main extends App {
 
   Thread.sleep(1000)
 
+  if (chatNode) {
+    // Only log errors in chat mode.
+    Logger.logLevels = List(Logger.Level.ERROR)
+    handler.addMessageObserver(new ChatLogger(transmissionObserver))
+  }
 //  transmissionObserver.queueMessage(s"Hi there from ${networkInfo.ownAddress
 //    .socket.getPort}")
 
