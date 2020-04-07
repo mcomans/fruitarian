@@ -31,8 +31,8 @@ object Main extends App {
   Thread.sleep(1000)
 
   if (chatNode) {
-    // Disable logging in Chat mode.
-    Logger.logLevels = Nil
+    // Log to file instead of console in chat mode.
+    Logger.setLogToFile()
     networkInfo.chatMode = true
     handler.addMessageObserver(new ChatLogger(transmissionObserver))
   }
