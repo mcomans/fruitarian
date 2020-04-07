@@ -1,7 +1,8 @@
 package nl.tudelft.fruitarian
 
 import java.io.{BufferedWriter, File, FileWriter}
-import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 
 object Logger {
@@ -29,7 +30,7 @@ object Logger {
   def setLogToFile(): Unit = {
     logFile = new File("application.log")
     logFileWriter = new BufferedWriter(new FileWriter(logFile))
-    logFileWriter.write(s"[START] ${LocalDate.now().toString}")
+    logFileWriter.write(s"[START] ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm"))}")
     logFileWriter.newLine()
     logAction = logToFile
   }
