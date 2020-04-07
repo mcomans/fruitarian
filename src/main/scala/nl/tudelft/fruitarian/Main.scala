@@ -30,8 +30,9 @@ object Main extends App {
   Thread.sleep(1000)
 
   if (chatNode) {
-    // Only log errors in chat mode.
+    // Disable logging in Chat mode.
     Logger.logLevels = Nil
+    networkInfo.chatMode = true
     handler.addMessageObserver(new ChatLogger(transmissionObserver))
   }
 
