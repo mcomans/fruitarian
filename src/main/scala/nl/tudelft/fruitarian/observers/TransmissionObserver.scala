@@ -136,7 +136,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
 
 
   override def receiveUpdate(event: FruitarianMessage): Unit = event match {
-    case TransmitRequest(from, to, reqRoundId) =>
+    case TransmitRequest(from, to, reqRoundId) => this.synchronized {
       if (messageQueue.nonEmpty && messageSent.isEmpty && backoff == 0) {
         // If we have a message to send and are not waiting for confirmation
         // of a previous message, send the next message. If we failed to send
@@ -157,6 +157,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
       }
       // Decrease the backoff by one until 0.
       backoff = math.max(0, backoff - 1)
+    }
 
     case TransmitMessage(_, _, message) =>
       this.synchronized {
