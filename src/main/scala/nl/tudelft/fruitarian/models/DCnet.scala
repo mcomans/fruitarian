@@ -101,7 +101,7 @@ object DCnet {
 			})
 		})
 		// The original message.
-		new String(res).replaceAll("""(?m)\s+$""","")
+		new String(res).replaceAll("""[^\s\d\w]""", "").stripTrailing()
 	}
 
 	// Converts a byte into a binary string format.
