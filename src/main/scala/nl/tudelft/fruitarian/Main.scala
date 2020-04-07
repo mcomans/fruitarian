@@ -3,7 +3,7 @@ package nl.tudelft.fruitarian
 import java.net.InetSocketAddress
 
 import nl.tudelft.fruitarian.models.NetworkInfo
-import nl.tudelft.fruitarian.observers.{BasicLogger, ChatLogger, EntryObserver, ExperimentObserver, Greeter, TransmissionObserver}
+import nl.tudelft.fruitarian.observers._
 import nl.tudelft.fruitarian.p2p.messages.EntryRequest
 import nl.tudelft.fruitarian.p2p.{Address, TCPHandler}
 
@@ -41,6 +41,8 @@ object Main extends App {
   if (experimentNode) {
     val experimentObserver = new ExperimentObserver(handler, transmissionObserver)
     handler.addMessageObserver(experimentObserver)
+    // val utilizationSenderObserver = new UtilizationObserver(handler, transmissionObserver)
+    // handler.addMessageObserver(utilizationSenderObserver)
   }
 
   if (startingNode) {
