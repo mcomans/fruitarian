@@ -27,6 +27,7 @@ object Main extends App {
   var transmissionObserver = new TransmissionObserver(handler, networkInfo)
   handler.addMessageObserver(transmissionObserver)
 
+  // Give the TCP Handler some time to start up.
   Thread.sleep(1000)
 
   if (chatNode) {
@@ -36,26 +37,25 @@ object Main extends App {
     handler.addMessageObserver(new ChatLogger(transmissionObserver))
   }
 
-  if (startingNode) {
-    // Start first round as first node
-    transmissionObserver.startMessageRound()
-  }
 
   if (experimentNode) {
     val experimentObserver = new ExperimentObserver(handler, transmissionObserver)
     handler.addMessageObserver(experimentObserver)
   }
 
-  // If we are a client node.
-  if (!startingNode) {
-    val helloWorldMessage = EntryRequest(
+  if (startingNode) {
+    // If we are a startingNode, start first round.
+    transmissionObserver.startMessageRound()
+  } else {
+    // If we are a client node, send EntryRequest to known node given in the
+    // arguments.
+    handler.sendMessage(EntryRequest(
       Address(handler.serverHost),
       Address(new InetSocketAddress(args(1), args(2).toInt)),
-      networkInfo.nodeId)
-
-    handler.sendMessage(helloWorldMessage)
+      networkInfo.nodeId))
   }
 
+  // On application shutdown, shutdown the handler.
   sys.addShutdownHook(() => {
     handler.shutdown()
   })
