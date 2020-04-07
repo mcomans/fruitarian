@@ -64,7 +64,7 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
    * which node sent it (see DCNet code).
    */
   def startMessageRound(): Unit = {
-    Thread.sleep(1000)
+    if (networkInfo.chatMode) Thread.sleep(1000)
     // Clear possible remaining responses.
     DCnet.clearResponses()
     roundId += 1
