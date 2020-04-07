@@ -28,7 +28,9 @@ object MessageSerializer {
           case header @ MessageHeader(TransmitMessage.MessageType, _, _) => TransmitMessage.fromHeaderAndBody(header, body)
           case header @ MessageHeader(ResultMessage.MessageType, _, _) => ResultMessage.fromHeaderAndBody(header, body)
           case header @ MessageHeader(NextRoundMessage.MessageType, _, _) => NextRoundMessage.fromHeaderAndBody(header, body)
+          case MessageHeader(msgType, _, _) => throw new Error(s"Unsupported message type: $msgType received.")
         }
+      case _ => throw new Error("Message could not be deserialized.")
     }
   }
 }

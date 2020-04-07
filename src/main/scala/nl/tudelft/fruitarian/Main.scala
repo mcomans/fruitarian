@@ -56,7 +56,5 @@ object Main extends App {
   }
 
   // On application shutdown, shutdown the handler.
-  sys.addShutdownHook(() => {
-    handler.shutdown()
-  })
+  sys.addShutdownHook(handler.shutdown)
 }
