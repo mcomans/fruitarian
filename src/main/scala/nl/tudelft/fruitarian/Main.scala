@@ -52,7 +52,7 @@ object Main extends App {
     // If we are a client node, send EntryRequest to known node given in the
     // arguments.
     handler.sendMessage(EntryRequest(
-      Address(handler.serverHost),
+      Address(networkInfo.ownAddress.socket),
       Address(new InetSocketAddress(args(1), args(2).toInt)),
       networkInfo.nodeId))
   }
