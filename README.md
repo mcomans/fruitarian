@@ -57,5 +57,6 @@ Using a slower rounds allows new nodes to catch up.
 
 The chat mode is activated by using the `--chat` flag.
 Or when you are joining another node `<ownport> <other-node-ip> <their-port> --chat` (for example `5000 192.168.1.2 5000 --chat`).
-The chat mode will disable all logging as it uses the terminal to interact with the application.
+Since the chat mode takes over the terminal it will log all logs to the file `application.log`.
+Each start is logged with a timestamp like so: `[START] 2020-04-07 11:30`
 Type the command `/help` to view all the possible commands.
