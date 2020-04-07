@@ -21,7 +21,7 @@ object Main extends App {
   val networkInfo = new NetworkInfo(serverPort)
   val handler = new TCPHandler(serverPort)
 
-  if (!chatNode) handler.addMessageObserver(BasicLogger)
+  handler.addMessageObserver(BasicLogger)
   handler.addMessageObserver(new Greeter(handler))
   handler.addMessageObserver(new EntryObserver(handler, networkInfo))
   var transmissionObserver = new TransmissionObserver(handler, networkInfo)
