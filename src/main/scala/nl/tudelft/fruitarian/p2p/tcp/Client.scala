@@ -12,6 +12,14 @@ import nl.tudelft.fruitarian.p2p.{Address, MessageSerializer, SendMsg}
 
 object Client {
   def messageToWrite(msg: FruitarianMessage) = Write(ByteString.fromString(MessageSerializer.serializeMsg(msg)))
+  def onMessageReceived(data: ByteString, callback: FruitarianMessage => Unit) = {
+    try {
+      val msg = MessageSerializer.deserialize(data.decodeString("utf-8"))
+      callback(msg)
+    } catch {
+      case e: Error => Logger.log(e.toString, Logger.Level.ERROR)
+    }
+  }
 
   def props(remote: InetSocketAddress, callback: FruitarianMessage => Unit) =
     Props(classOf[Client], remote, callback);
@@ -59,9 +67,7 @@ class Client(remote: InetSocketAddress, callback: FruitarianMessage => Unit) ext
         case CommandFailed(w: Write) => Logger.log("[C] Write Failed", Logger.Level.ERROR)
 
         // When data received, send it to the listener.
-        case Received(data: ByteString) =>
-          val msg: FruitarianMessage = MessageSerializer.deserialize(data.decodeString("utf-8"), Address(remote))
-          callback(msg)
+        case Received(data: ByteString) => Client.onMessageReceived(data, callback)
 
         // On close command.
         case "close" => connection ! Close
