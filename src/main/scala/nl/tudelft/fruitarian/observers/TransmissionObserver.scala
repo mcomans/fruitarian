@@ -38,13 +38,14 @@ class TransmissionObserver(handler: TCPHandler, networkInfo: NetworkInfo) extend
    *                   the queue).
    */
   def queueMessage(message: String, prioritise: Boolean = false): Unit = {
-    if (message.length > DCnet.MESSAGE_SIZE) {
+    val processedMessage = message.stripTrailing()
+    if (processedMessage.length > DCnet.MESSAGE_SIZE) {
       throw new Exception("Message too long.")
     }
     if (prioritise) {
-      messageQueue = mutable.Queue[String](message) ++ messageQueue
+      messageQueue = mutable.Queue[String](processedMessage) ++ messageQueue
     } else {
-      messageQueue.enqueue(message)
+      messageQueue.enqueue(processedMessage)
     }
   }
 
