@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import nl.tudelft.fruitarian.p2p.messages.FruitarianMessage
 import nl.tudelft.fruitarian.patterns.Observer
 
-class TCPHandler(serverPort: Int = 5000) {
+class TCPHandler(serverPort: Int) {
   // Bind to the machine on the given port.
   val serverHost = new InetSocketAddress("0.0.0.0", serverPort)
 

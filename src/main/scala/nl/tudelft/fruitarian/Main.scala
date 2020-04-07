@@ -8,21 +8,20 @@ import nl.tudelft.fruitarian.p2p.messages.EntryRequest
 import nl.tudelft.fruitarian.p2p.{Address, TCPHandler}
 
 object Main extends App {
-  /* This example will start a Transmission Message Round with itself. */
-  val networkInfo = new NetworkInfo()
-
+  // Define behaviour with program arguments.
   val experimentNode = args.contains("-e")
   val chatNode = args.contains("--chat")
   val experimentStartingNode = args.length == 1 && experimentNode
   val chatStartingNode = args.length == 1 && chatNode
   val startingNode = args.length == 0 || experimentStartingNode || chatStartingNode
 
-  val handler = if (startingNode) new TCPHandler() else new TCPHandler(args(0).toInt)
-  if (!chatNode) {
-    // If you are a chatNode you need to set your networkInfo.ownAddress to your machine ip.
-    networkInfo.ownAddress = Address(handler.serverHost)
-    handler.addMessageObserver(BasicLogger)
-  }
+  // Use port 5000 as default server port.
+  val serverPort = if (startingNode) 5000 else args(0).toInt
+
+  val networkInfo = new NetworkInfo(serverPort)
+  val handler = new TCPHandler(serverPort)
+
+  if (!chatNode) handler.addMessageObserver(BasicLogger)
   handler.addMessageObserver(new Greeter(handler))
   handler.addMessageObserver(new EntryObserver(handler, networkInfo))
   var transmissionObserver = new TransmissionObserver(handler, networkInfo)

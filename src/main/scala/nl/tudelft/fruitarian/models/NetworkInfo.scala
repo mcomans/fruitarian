@@ -1,15 +1,16 @@
 package nl.tudelft.fruitarian.models
 
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
 
 import nl.tudelft.fruitarian.p2p.Address
 
 import scala.collection.mutable.ArrayBuffer
 
-class NetworkInfo() {
+class NetworkInfo(serverPort: Int) {
   val cliquePeers: ArrayBuffer[Peer] = ArrayBuffer[Peer]()
-  var ownAddress: Address = _
+  var ownAddress: Address = Address(new InetSocketAddress(InetAddress.getLocalHost.getHostAddress, serverPort))
   val nodeId: String = java.util.UUID.randomUUID.toString
+  var chatMode: Boolean = false
 
   // Returns the addresses of all peers.
   def getPeers: List[(String, Address)] = {
