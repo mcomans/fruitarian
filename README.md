@@ -45,3 +45,17 @@ Once inside the `sbt` terminal you can run the command `run` to run the main pro
 
 To apply some simple checks before you commit like removing trailing whitespaces, or to forbid you to commit to master you can install [pre-commit](https://pre-commit.com).
 Installation can be done using the command `python3 -m pip install pre-commit` and running `pre-commit install` in the project root folder.
+
+## Chat
+For demonstration purposes the application contains a chat mode that uses the `ChatLogger` observer.
+This sets up the application to act as an inbox based chat (more like email).
+Each node in the clique is able to send a message which will be received anonymously by all nodes in this clique (including the sender).
+
+This mode significantly slows down the rounds to allow easy syncing of the random generators for each node.
+This is because these random generators have to be in sync with the roundId to work (see `models.Peer` class).
+Using a slower rounds allows new nodes to catch up.
+
+The chat mode is activated by using the `--chat` flag.
+Or when you are joining another node `<ownport> <other-node-ip> <their-port> --chat` (for example `5000 192.168.1.2 5000 --chat`).
+The chat mode will disable all logging as it uses the terminal to interact with the application.
+Type the command `/help` to view all the possible commands.
