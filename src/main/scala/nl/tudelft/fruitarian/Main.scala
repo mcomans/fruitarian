@@ -8,49 +8,55 @@ import nl.tudelft.fruitarian.p2p.messages.EntryRequest
 import nl.tudelft.fruitarian.p2p.{Address, TCPHandler}
 
 object Main extends App {
-  /* This example will start a Transmission Message Round with itself. */
-  val networkInfo = new NetworkInfo()
-
+  // Define behaviour with program arguments.
   val experimentNode = args.contains("-e")
+  val chatNode = args.contains("--chat")
   val experimentStartingNode = args.length == 1 && experimentNode
-  val startingNode = args.length == 0 || experimentStartingNode
+  val chatStartingNode = args.length == 1 && chatNode
+  val startingNode = args.length == 0 || experimentStartingNode || chatStartingNode
 
-  val handler = if (startingNode) new TCPHandler() else new TCPHandler(args(0).toInt)
-  networkInfo.ownAddress = Address(handler.serverHost)
+  // Use port 5000 as default server port.
+  val serverPort = if (startingNode) 5000 else args(0).toInt
+
+  val networkInfo = new NetworkInfo(serverPort)
+  val handler = new TCPHandler(serverPort)
+
   handler.addMessageObserver(BasicLogger)
   handler.addMessageObserver(new Greeter(handler))
   handler.addMessageObserver(new EntryObserver(handler, networkInfo))
   var transmissionObserver = new TransmissionObserver(handler, networkInfo)
   handler.addMessageObserver(transmissionObserver)
 
+  // Give the TCP Handler some time to start up.
   Thread.sleep(1000)
 
-//  transmissionObserver.queueMessage(s"Hi there from ${networkInfo.ownAddress
-//    .socket.getPort}")
-
-  if (startingNode) {
-    // Start first round as first node
-    transmissionObserver.startMessageRound()
+  if (chatNode) {
+    // Log to file instead of console in chat mode.
+    Logger.setLogToFile()
+    networkInfo.chatMode = true
+    handler.addMessageObserver(new ChatLogger(transmissionObserver))
   }
+
 
   if (experimentNode) {
-    val utilizationSenderObserver = new UtilizationObserver(handler, transmissionObserver)
-    handler.addMessageObserver(utilizationSenderObserver)
-//    val experimentObserver = new ExperimentObserver(handler, transmissionObserver)
-//    handler.addMessageObserver(experimentObserver)
+    val experimentObserver = new ExperimentObserver(handler, transmissionObserver)
+    handler.addMessageObserver(experimentObserver)
+    // val utilizationSenderObserver = new UtilizationObserver(handler, transmissionObserver)
+    // handler.addMessageObserver(utilizationSenderObserver)
   }
 
-  // If we are a client node.
-  if (!startingNode) {
-    val helloWorldMessage = EntryRequest(
-      Address(handler.serverHost),
+  if (startingNode) {
+    // If we are a startingNode, start first round.
+    transmissionObserver.startMessageRound()
+  } else {
+    // If we are a client node, send EntryRequest to known node given in the
+    // arguments.
+    handler.sendMessage(EntryRequest(
+      Address(networkInfo.ownAddress.socket),
       Address(new InetSocketAddress(args(1), args(2).toInt)),
-      networkInfo.nodeId)
-
-    handler.sendMessage(helloWorldMessage)
+      networkInfo.nodeId))
   }
 
-  sys.addShutdownHook(() => {
-    handler.shutdown()
-  })
+  // On application shutdown, shutdown the handler.
+  sys.addShutdownHook(handler.shutdown())
 }

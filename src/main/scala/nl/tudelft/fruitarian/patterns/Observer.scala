@@ -5,5 +5,5 @@ package nl.tudelft.fruitarian.patterns
  * @tparam S The type of objects to expect updates about.
  */
 trait Observer[S] {
-  def receiveUpdate(event: S);
+  def receiveUpdate(event: S): Unit
 }

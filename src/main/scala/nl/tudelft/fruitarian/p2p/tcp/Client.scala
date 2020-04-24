@@ -6,11 +6,20 @@ import akka.actor.{Actor, ActorSystem, Props}
 import akka.io.Tcp._
 import akka.io.{IO, Tcp}
 import akka.util.ByteString
+import nl.tudelft.fruitarian.Logger
 import nl.tudelft.fruitarian.p2p.messages.FruitarianMessage
 import nl.tudelft.fruitarian.p2p.{Address, MessageSerializer, SendMsg}
 
 object Client {
   def messageToWrite(msg: FruitarianMessage) = Write(ByteString.fromString(MessageSerializer.serializeMsg(msg)))
+  def onMessageReceived(data: ByteString, callback: FruitarianMessage => Unit) = {
+    try {
+      val msg = MessageSerializer.deserialize(data.decodeString("utf-8"))
+      callback(msg)
+    } catch {
+      case e: Error => Logger.log(e.toString, Logger.Level.ERROR)
+    }
+  }
 
   def props(remote: InetSocketAddress, callback: FruitarianMessage => Unit) =
     Props(classOf[Client], remote, callback);
@@ -47,7 +56,7 @@ class Client(remote: InetSocketAddress, callback: FruitarianMessage => Unit) ext
       queue.foreach((msg: FruitarianMessage) => connection ! Client.messageToWrite(msg))
       queue = Nil
 
-      println(s"[C] Connection established to [$remote]")
+      Logger.log(s"[C] Connection established to [$remote]", Logger.Level.INFO)
 
       context.become {
         // Upon getting binary data, send it through the connection.
@@ -55,21 +64,17 @@ class Client(remote: InetSocketAddress, callback: FruitarianMessage => Unit) ext
           connection ! Client.messageToWrite(msg)
 
         // If the write failed due to OS buffer being full.
-        case CommandFailed(w: Write) => println("[C] Write Failed")
+        case CommandFailed(w: Write) => Logger.log("[C] Write Failed", Logger.Level.ERROR)
 
         // When data received, send it to the listener.
-        case Received(data: ByteString) =>
-          val msg: FruitarianMessage = MessageSerializer.deserialize(data.decodeString("utf-8"))
-          // Set the msg header from field to the actual receiver value.
-          msg.header.from = Address(remote)
-          callback(msg)
+        case Received(data: ByteString) => Client.onMessageReceived(data, callback)
 
         // On close command.
         case "close" => connection ! Close
 
         // Upon receiving the close message.
         case _: ConnectionClosed =>
-          println(s"[C] Connection Closed with [$remote]")
+          Logger.log(s"[C] Connection Closed with [$remote]", Logger.Level.INFO)
           context.stop(self)
       }
   }

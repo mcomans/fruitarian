@@ -15,7 +15,7 @@ class UtilizationObserver(handler: TCPHandler, transmissionObserver: Transmissio
 
   var lastMessage = ""
 
-  def sendNewMessage() {
+  def sendNewMessage(): Unit = {
     lastMessage = ExperimentHelper.generateRandomMessage(DCnet.MESSAGE_SIZE)
     transmissionObserver.queueMessage(lastMessage)
     messagesSent += 1

@@ -3,6 +3,7 @@ package nl.tudelft.fruitarian.p2p.tcp
 import java.net.InetSocketAddress
 
 import akka.actor.{Actor, ActorRef, Props}
+import nl.tudelft.fruitarian.Logger
 import nl.tudelft.fruitarian.p2p.messages.FruitarianMessage
 import nl.tudelft.fruitarian.p2p.{Address, MessageSerializer, SendMsg}
 
@@ -25,13 +26,10 @@ class ConnectionHandler(connection: ActorRef, remote: InetSocketAddress, callbac
 
     // When the TCP connection is closed, kill this node.
     case PeerClosed =>
-      println("[S] Client connection closed")
+      Logger.log("[S] Client connection closed", Logger.Level.INFO)
       context.stop(self)
 
     // Send any other event to the listener.
-    case Received(data) =>
-      val msg = MessageSerializer.deserialize(data.decodeString("utf-8"))
-      msg.header.from = Address(remote)
-      callback(msg)
+    case Received(data) => Client.onMessageReceived(data, callback)
   }
 }

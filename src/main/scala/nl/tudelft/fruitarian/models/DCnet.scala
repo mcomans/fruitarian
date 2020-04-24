@@ -101,7 +101,7 @@ object DCnet {
 			})
 		})
 		// The original message.
-		new String(res).replaceAll("""(?m)\s+$""","")
+		new String(res).replaceAll("""[^ -~]""", "").stripTrailing()
 	}
 
 	// Converts a byte into a binary string format.
@@ -117,6 +117,7 @@ object DCnet {
 			case ('0', b) => b
 			case ('1', '1') => '0'
 			case ('1', '0') => '1'
+			case (a, b) => throw new Error(s"Case ($a, $b) not possible");
 		}
 		Integer.parseInt(res.mkString(""), 2).toByte
 	}
