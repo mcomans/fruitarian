@@ -1,6 +1,6 @@
 # Fruitarian
 
-A clone of the herbivore anonymous communication protocol
+An implementation of the herbivore anonymous communication protocol
 
 ## Running
 
